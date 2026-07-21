@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ScreenProtector (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ScreenProtector (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
