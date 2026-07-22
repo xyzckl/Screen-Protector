@@ -1,0 +1,88 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ "master", "main" ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x # .NET 10 is in preview, fallback to stable for SDK if needed, but build target is 10
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore dependencies
+      run: dotnet restore ScreenProtector/ScreenProtector.csproj
+
+    - name: Decode the Pfx
+      run: |
+        $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.CERT_BASE64 }}")
+        [IO.File]::WriteAllBytes("ScreenProtector.pfx", $pfx_cert_byte)
+      shell: pwsh
+
+    - name: Build and Publish
+      run: >
+        dotnet publish ScreenProtector/ScreenProtector.csproj
+        -c Release
+        -r win-x64
+        --self-contained true
+        -p:PublishSingleFile=true
+        -p:PublishReadyToRun=true
+        -p:IncludeNativeLibrariesForSelfExtract=true
+        -o ./publish_output
+
+    - name: Sign the executable
+      run: |
+        $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" | Select-Object -First 1).FullName
+        & $signtool sign /f ScreenProtector.pfx /p "${{ secrets.CERT_PASSWORD }}" /fd SHA256 ./publish_output/ScreenProtector.exe
+      shell: pwsh
+
+    - name: Remove Pfx
+      run: Remove-Item -Path "ScreenProtector.pfx"
+      shell: pwsh
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ScreenProtector-win-x64
+        path: ./publish_output/ScreenProtector.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ScreenProtector-win-x64
+        path: ./artifact
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ./artifact/ScreenProtector.exe
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
