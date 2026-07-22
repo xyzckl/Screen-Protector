@@ -65,8 +65,11 @@ public static class ScreenCapture
     [DllImport("user32.dll")]
     public static extern int GetSystemMetrics(int nIndex);
 
-    public static int ScreenWidth => GetSystemMetrics(0);  // SM_CXSCREEN
-    public static int ScreenHeight => GetSystemMetrics(1); // SM_CYSCREEN
+    private static readonly Lazy<int> _screenWidth = new Lazy<int>(() => GetSystemMetrics(0));
+    private static readonly Lazy<int> _screenHeight = new Lazy<int>(() => GetSystemMetrics(1));
+
+    public static int ScreenWidth => _screenWidth.Value;  // SM_CXSCREEN
+    public static int ScreenHeight => _screenHeight.Value; // SM_CYSCREEN
 
     /// <summary>
     /// Captures the primary screen into a BGRA byte array.
@@ -122,8 +125,9 @@ public static class ScreenCapture
             int result = GetDIBits(hdcMem, hBitmap, 0, (uint)destHeight, pixelBuffer, ref bmi, DIB_RGB_COLORS);
             return result > 0;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             return false;
         }
         finally

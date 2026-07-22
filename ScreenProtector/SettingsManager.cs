@@ -50,8 +50,9 @@ public static class SettingsManager
                 }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             // Fallback to defaults on error
         }
         Current = new AppSettings();
@@ -68,8 +69,9 @@ public static class SettingsManager
             string json = JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(FilePath, json);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
             // Ignore write errors gracefully
         }
     }

@@ -79,7 +79,7 @@ public sealed partial class MainPage : Page
         }
         catch (System.Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to set startup registry key: {ex.Message}");
+            System.Console.WriteLine($"Failed to set startup registry key: {ex.Message}");
         }
     }
     
