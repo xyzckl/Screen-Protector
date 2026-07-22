@@ -49,13 +49,13 @@ public sealed partial class MainWindow : Window
 
     [DllImport("user32.dll")]
     public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, WndProcDelegate dwNewLong);
-
+    
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
     public static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
     [DllImport("user32.dll")]
     public static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-
+    
     public delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
     private const int GWLP_WNDPROC = -4;
 
@@ -85,7 +85,7 @@ public sealed partial class MainWindow : Window
     private void SetupTrayIcon()
     {
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-
+        
         _wndProcDelegate = TrayWndProc;
         _oldWndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, _wndProcDelegate);
 
@@ -102,7 +102,7 @@ public sealed partial class MainWindow : Window
             hIcon = hIcon,
             szTip = "ScreenProtector"
         };
-
+        
         Shell_NotifyIcon(NIM_ADD, ref _trayIcon);
     }
 

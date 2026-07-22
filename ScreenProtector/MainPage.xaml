@@ -8,276 +8,64 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24">
-            <StackPanel MaxWidth="800" HorizontalAlignment="Center" Spacing="24">
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <TextBlock Text="ScreenProtector Settings" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,24" />
+        
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
                 
-                <!-- Header Banner -->
-                <Grid Margin="0,12,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <!-- Effect Type -->
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Effect Type" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <ComboBox x:Name="EffectTypeComboBox" SelectedIndex="0" Width="200" SelectionChanged="EffectTypeComboBox_SelectionChanged">
+                        <x:String>CRT Scanline</x:String>
+                        <x:String>Pixelate</x:String>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- CRT Settings -->
+                <StackPanel x:Name="CrtSettingsPanel" Spacing="8">
+                    <TextBlock Text="CRT Settings" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,0" />
                     
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="屏幕特效遮罩 &amp; 保护器" Style="{ThemeResource TitleTextBlockStyle}" FontWeight="Bold" />
-                        <TextBlock Text="定制您的 Windows 11 复古视觉效果，创造专属的像素艺术与 CRT 拟真扫描氛围。" Style="{ThemeResource BodyTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    </StackPanel>
+                    <TextBlock Text="Scanline Speed" />
+                    <Slider x:Name="CrtSpeedSlider" Minimum="1" Maximum="100" Value="50" ValueChanged="CrtSettings_ValueChanged" />
                     
-                    <Border Grid.Column="1" VerticalAlignment="Center" Background="{ThemeResource AccentFillColorDefaultBrush}" CornerRadius="4" Padding="12,6">
-                        <TextBlock Text="v1.0.0 Alpha" Foreground="White" FontWeight="SemiBold" FontSize="12" />
-                    </Border>
-                </Grid>
-
-                <!-- Core Switch Card -->
-                <Border CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        
-                        <FontIcon Glyph="&#xE7E6;" FontFamily="{ThemeResource SymbolThemeFontFamily}" FontSize="24" Foreground="{ThemeResource AccentFillColorDefaultBrush}" Margin="0,0,16,0" VerticalAlignment="Center" />
-                        
-                        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="启用全屏特效滤镜" FontWeight="SemiBold" FontSize="16" />
-                            <TextBlock Text="开启后将启动置顶、全屏且默认鼠标穿透的特效遮罩窗口。" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                        </StackPanel>
-                        
-                        <ToggleSwitch x:Name="OverlayToggle" Grid.Column="2" IsOn="False" Toggled="OnOverlayToggleToggled" OnContent="已开启" OffContent="已关闭" VerticalAlignment="Center" />
-                    </Grid>
-                </Border>
-
-                <!-- Configuration Sections -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Effect Opacity" />
+                    <Slider x:Name="CrtOpacitySlider" Minimum="0" Maximum="1" StepFrequency="0.05" Value="0.3" ValueChanged="CrtSettings_ValueChanged" />
                     
-                    <StackPanel Spacing="16">
-                        
-                        <!-- General Settings Card -->
-                        <Border CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20">
-                            <StackPanel Spacing="16">
-                                <TextBlock Text="通用参数配置" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
-                                
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="200" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="视觉效果模式" FontWeight="Medium" />
-                                        <TextBlock Text="切换不同的屏幕视觉处理风格" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <ComboBox x:Name="EffectTypeCombo" Grid.Column="1" HorizontalAlignment="Stretch" SelectionChanged="OnEffectTypeComboSelectionChanged">
-                                        <ComboBoxItem Content="无效果 (None)" />
-                                        <ComboBoxItem Content="方块像素风格 (Pixel Art)" />
-                                        <ComboBoxItem Content="CRT 复古扫描线 (CRT Scanline)" />
-                                    </ComboBox>
-                                </Grid>
+                    <TextBlock Text="Color Filter" />
+                    <ComboBox x:Name="CrtColorComboBox" SelectedIndex="0" Width="200" SelectionChanged="CrtSettings_SelectionChanged">
+                        <x:String>Classic Amber</x:String>
+                        <x:String>Matrix Green</x:String>
+                        <x:String>None</x:String>
+                    </ComboBox>
+                </StackPanel>
 
-                                <MenuFlyoutSeparator />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="200" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="鼠标点击穿透" FontWeight="Medium" />
-                                        <TextBlock Text="开启后，鼠标点击将直接穿透遮罩作用于底层的应用窗口" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <ToggleSwitch x:Name="ClickThroughToggle" Grid.Column="1" IsOn="True" HorizontalAlignment="Right" Toggled="OnClickThroughToggleToggled" />
-                                </Grid>
-
-                                <MenuFlyoutSeparator />
-
-                                <!-- Performance FPS Settings -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="300" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="后台画面捕获帧率 (Capture FPS)" FontWeight="Medium" />
-                                        <TextBlock Text="控制屏幕抓取更新的频率。降低捕获帧率可大幅度节约系统资源。" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                                        <Slider x:Name="CaptureFpsSlider" Minimum="5" Maximum="60" StepFrequency="5" Width="220" ValueChanged="OnCaptureFpsSliderValueChanged" />
-                                        <TextBlock x:Name="CaptureFpsText" Text="30 FPS" Width="50" VerticalAlignment="Center" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <MenuFlyoutSeparator />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="300" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="显示输出帧率 (Output FPS)" FontWeight="Medium" />
-                                        <TextBlock Text="控制遮罩画面的刷新率。高输出帧率可让动态扫描等动画更顺滑。" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                                        <Slider x:Name="OutputFpsSlider" Minimum="5" Maximum="60" StepFrequency="5" Width="220" ValueChanged="OnOutputFpsSliderValueChanged" />
-                                        <TextBlock x:Name="OutputFpsText" Text="60 FPS" Width="50" VerticalAlignment="Center" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Pixel Art Specific Settings Card -->
-                        <Border x:Name="PixelSettingsCard" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20">
-                            <StackPanel Spacing="16">
-                                <TextBlock Text="方块像素风格定制" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="300" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="像素方块大小 (Density / Block Size)" FontWeight="Medium" />
-                                        <TextBlock Text="调整像素网格的密集度。数值越大，像素颗粒感越明显。" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                                        <Slider x:Name="PixelSizeSlider" Minimum="2" Maximum="32" StepFrequency="1" Width="220" ValueChanged="OnPixelSizeSliderValueChanged" />
-                                        <TextBlock x:Name="PixelSizeText" Text="8 px" Width="50" VerticalAlignment="Center" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <MenuFlyoutSeparator />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="200" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="复古单色模式" FontWeight="Medium" />
-                                        <TextBlock Text="将屏幕渲染为怀旧的单色，如掌机绿或琥珀色" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <ToggleSwitch x:Name="PixelMonoToggle" Grid.Column="1" IsOn="False" HorizontalAlignment="Right" Toggled="OnPixelMonoToggleToggled" />
-                                </Grid>
-
-                                <MenuFlyoutSeparator x:Name="PixelColorSeparator" />
-
-                                <Grid x:Name="PixelColorPanel">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="单色配色选择" FontWeight="Medium" />
-                                        <TextBlock Text="选择或输入自定义的单色滤镜色彩" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                                        <Button Content="GameBoy" Background="#8BAC0F" Foreground="Black" Click="OnGameBoyColorClick" Width="85" CornerRadius="4" />
-                                        <Button Content="Amber" Background="#FFB000" Foreground="Black" Click="OnAmberColorClick" Width="80" CornerRadius="4" />
-                                        <Button Content="Cyan" Background="#00FFFF" Foreground="Black" Click="OnCyanColorClick" Width="80" CornerRadius="4" />
-                                        <TextBox x:Name="CustomColorHex" PlaceholderText="#HEX" Width="90" KeyUp="OnCustomColorHexKeyUp" TextChanged="OnCustomColorHexChanged" CornerRadius="4" />
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- CRT Specific Settings Card -->
-                        <Border x:Name="CrtSettingsCard" CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20">
-                            <StackPanel Spacing="16">
-                                <TextBlock Text="CRT 复古扫描线定制" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="200" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2">
-                                        <TextBlock Text="扫描滤镜色彩" FontWeight="Medium" />
-                                        <TextBlock Text="选择 CRT 屏幕的荧光粉色彩风格" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <ComboBox x:Name="CrtFilterCombo" Grid.Column="1" HorizontalAlignment="Stretch" SelectionChanged="OnCrtFilterComboSelectionChanged">
-                                        <ComboBoxItem Content="物理拟真三原色 (Retro RGB)" />
-                                        <ComboBoxItem Content="彩色无偏色 (None)" />
-                                        <ComboBoxItem Content="磷光绿 (Green CRT)" />
-                                        <ComboBoxItem Content="荧光琥珀色 (Amber CRT)" />
-                                        <ComboBoxItem Content="黑白灰度 (Monochrome)" />
-                                    </ComboBox>
-                                </Grid>
-
-                                <MenuFlyoutSeparator />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="300" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="扫描线深度 / 阴影强度" FontWeight="Medium" />
-                                        <TextBlock Text="数值越高，扫描线间的阴影遮罩越暗越明显。" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                                        <Slider x:Name="CrtIntensitySlider" Minimum="0" Maximum="1" StepFrequency="0.05" Width="220" ValueChanged="OnCrtIntensitySliderValueChanged" />
-                                        <TextBlock x:Name="CrtIntensityText" Text="40%" Width="50" VerticalAlignment="Center" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <MenuFlyoutSeparator />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="300" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="扫描线宽度 (Scanline Width)" FontWeight="Medium" />
-                                        <TextBlock Text="修改扫描线的物理厚度" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                                        <Slider x:Name="CrtScanlineWidthSlider" Minimum="1" Maximum="4" StepFrequency="1" Width="220" ValueChanged="OnCrtScanlineWidthSliderValueChanged" />
-                                        <TextBlock x:Name="CrtScanlineWidthText" Text="2 px" Width="50" VerticalAlignment="Center" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <MenuFlyoutSeparator />
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="300" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="2" VerticalAlignment="Center">
-                                        <TextBlock Text="电子枪扫掠扫视速度" FontWeight="Medium" />
-                                        <TextBlock Text="模拟显像管垂直重绘时的光晕波动速度。0 为静止。" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                                        <Slider x:Name="CrtSpeedSlider" Minimum="0" Maximum="10" StepFrequency="1" Width="220" ValueChanged="OnCrtSpeedSliderValueChanged" />
-                                        <TextBlock x:Name="CrtSpeedText" Text="3" Width="50" VerticalAlignment="Center" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- GitHub Team & CI/CD Card -->
-                        <Border CornerRadius="8" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="20">
-                            <StackPanel Spacing="12">
-                                <TextBlock Text="团队协作与 CI/CD 自动化构建" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4" />
-                                <TextBlock Text="该项目已集成 GitHub Actions 自动化编译流程： " FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                
-                                <Border Background="{ThemeResource SystemFillColorSolidNeutralBrush}" Padding="16,12" CornerRadius="4" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
-                                    <StackPanel Spacing="6">
-                                        <TextBlock Text="1. 在本地完成框架测试后，您可以推送到您的 GitHub 远程仓库开始协作。" FontSize="12.5" />
-                                        <TextBlock Text="2. 只要推送或发布带有 v 前缀的版本号标签 (例如 v1.0.0)，GitHub CI 会自动激活。" FontSize="12.5" />
-                                        <TextBlock Text="3. CI 将在云端 Windows 环境下一键打包单文件、自我托管的 ScreenProtector.exe 并绑定发布至 GitHub Release 页面。" FontSize="12.5" />
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </Border>
-                        
-                    </StackPanel>
-                </Grid>
+                <!-- Pixelate Settings -->
+                <StackPanel x:Name="PixelSettingsPanel" Spacing="8" Visibility="Collapsed">
+                    <TextBlock Text="Pixelate Settings" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,0" />
+                    
+                    <TextBlock Text="Pixel Size" />
+                    <Slider x:Name="PixelSizeSlider" Minimum="2" Maximum="64" Value="16" ValueChanged="PixelSettings_ValueChanged" />
+                    
+                    <ToggleSwitch x:Name="PixelMonochromeToggle" Header="Monochrome" Toggled="PixelSettings_Toggled" />
+                </StackPanel>
+                
+                <!-- System Settings -->
+                <StackPanel Spacing="8" Margin="0,24,0,0">
+                    <TextBlock Text="System Settings" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <ToggleSwitch x:Name="RunInBackgroundToggle" Header="Run in Background (System Tray)" IsOn="True" Toggled="SystemSettings_Toggled" />
+                    <ToggleSwitch x:Name="RunAtStartupToggle" Header="Run at Startup" Toggled="RunAtStartupToggle_Toggled" />
+                </StackPanel>
+                
+                <!-- Open Overlay -->
+                <Button Content="Show Overlay" Margin="0,16,0,0" Click="ShowOverlay_Click" Style="{StaticResource AccentButtonStyle}" />
+                <Button Content="Close Overlay" Click="CloseOverlay_Click" />
             </StackPanel>
         </ScrollViewer>
     </Grid>
