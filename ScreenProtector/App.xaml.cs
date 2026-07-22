@@ -1,4 +1,4 @@
-﻿using Windows.ApplicationModel;
+using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
@@ -30,6 +30,8 @@ public partial class App : Application
     /// </summary>
     public App()
     {
+        // Required for Windows App SDK SingleFile unpackaged execution
+        Environment.SetEnvironmentVariable("MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY", AppContext.BaseDirectory);
         InitializeComponent();
     }
 
@@ -39,7 +41,15 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
+        // Load persist settings
+        SettingsManager.Load();
+
         _window = new MainWindow();
+        _window.Closed += (s, e) =>
+        {
+            // Close active overlays on exit
+            MainPage.CloseOverlayOnExit();
+        };
         _window.Activate();
     }
 }
