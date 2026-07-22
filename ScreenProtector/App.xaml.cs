@@ -21,6 +21,7 @@ namespace ScreenProtector;
 /// </summary>
 public partial class App : Application
 {
+    public Window? m_window { get { return _window; } }
     private Window? _window;
     
     /// <summary>
