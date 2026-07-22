@@ -117,7 +117,6 @@ public sealed partial class MainWindow : Window
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     AppWindow.Show();
-                    WinRT.Interop.WindowNative.GetWindowHandle(this);
                     // Bring to front logic if necessary could go here
                 });
             }
