@@ -38,6 +38,8 @@ public sealed partial class MainWindow : Window
     private const uint IMAGE_ICON = 1;
     private const uint LR_LOADFROMFILE = 0x00000010;
     private const uint LR_DEFAULTSIZE = 0x00000040;
+    private const uint LR_LOADTRANSPARENT = 0x00000020;
+    private const int TRAY_ICON_SIZE = 32;
 
     private const int NIM_ADD = 0x00000000;
     private const int NIM_MODIFY = 0x00000001;
@@ -111,7 +113,7 @@ public sealed partial class MainWindow : Window
         _oldWndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, _wndProcDelegate);
 
         string iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
-        IntPtr hIcon = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+        IntPtr hIcon = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, TRAY_ICON_SIZE, TRAY_ICON_SIZE, LR_LOADFROMFILE | LR_DEFAULTSIZE | LR_LOADTRANSPARENT);
 
         _trayIcon = new NOTIFYICONDATA
         {
