@@ -44,6 +44,7 @@ jobs:
         --self-contained false 
         -p:PublishSingleFile=true 
         -p:PublishReadyToRun=true 
+        -p:PublishTrimmed=false
         -p:WindowsPackageType=None
         -o ./publish_output
 
