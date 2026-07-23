@@ -30,9 +30,6 @@ public sealed partial class OverlayWindow : Window
     {
         InitializeComponent();
         
-        // Use WinUI 3 modern transparent background capability
-        this.SystemBackdrop = new Microsoft.UI.Xaml.Media.TransparentTintBackdrop();
-
         ExtendsContentIntoTitleBar = true;
         
         this.Activated += OverlayWindow_Activated;
