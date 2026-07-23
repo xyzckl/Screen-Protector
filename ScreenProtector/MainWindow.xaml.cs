@@ -87,18 +87,51 @@ public sealed partial class MainWindow : Window
     private WndProcDelegate? _wndProcDelegate;
     private IntPtr _oldWndProc;
     private bool _trayInitialized;
+    private bool _deferredStartupInitialized;
+    private bool _rootFrameInitialized;
 
     private const int HOTKEY_ID = 9000;
 
     public MainWindow()
     {
+        StartupTrace.Write("MainWindow.ctor enter");
         InitializeComponent();
+        StartupTrace.Write("MainWindow.InitializeComponent completed");
 
         AppWindow.SetIcon("Assets/AppIcon.ico");
-        RootFrame.Navigate(typeof(MainPage));
-        SetupTrayIcon();
+        StartupTrace.Write("AppWindow.SetIcon completed");
+        Activated += MainWindow_Activated;
         AppWindow.Closing += AppWindow_Closing;
         Closed += MainWindow_Closed;
+        StartupTrace.Write("MainWindow event handlers attached");
+    }
+
+    private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+    {
+        StartupTrace.Write($"MainWindow.Activated enter; deferred={_deferredStartupInitialized}");
+        if (_deferredStartupInitialized)
+        {
+            return;
+        }
+
+        _deferredStartupInitialized = true;
+        EnsureRootFrameInitialized();
+        StartupTrace.Write("RootFrame initialized");
+        SetupTrayIcon();
+        StartupTrace.Write("Tray icon setup completed");
+    }
+
+    private void EnsureRootFrameInitialized()
+    {
+        if (_rootFrameInitialized)
+        {
+            return;
+        }
+
+        _rootFrameInitialized = true;
+        StartupTrace.Write("Navigating RootFrame to MainPage");
+        RootFrame.Navigate(typeof(MainPage));
+        StartupTrace.Write("RootFrame.Navigate completed");
     }
 
     private void SetupTrayIcon()

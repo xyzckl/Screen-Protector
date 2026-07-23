@@ -50,11 +50,13 @@ public sealed partial class OverlayWindow : Window
     private int _captureHeight;
     private bool _hasCapturedFrame;
     private TimeSpan _captureAccumulator = TimeSpan.Zero;
-    private Color _pixelTintColor = Color.FromArgb(255, 155, 188, 15);
+    private IScreenCaptureBackend _captureBackend;
+    private readonly OverlayRenderSettings _renderSettings = new();
 
     public OverlayWindow()
     {
         InitializeComponent();
+        _captureBackend = ScreenCapture.CreateBackend();
         ExtendsContentIntoTitleBar = true;
         Activated += OverlayWindow_Activated;
     }
@@ -69,14 +71,23 @@ public sealed partial class OverlayWindow : Window
     public float PixelSize { get; set; } = 16f;
     public bool PixelMonochrome { get; set; }
     public string PixelMonochromeColorHex { get; set; } = "#9BBC0F";
+    public float PixelBrightness { get; set; } = 1f;
     public float GameBoyPixelSize { get; set; } = 4f;
     public bool GameBoyGhosting { get; set; } = true;
+    public float GameBoyBrightness { get; set; } = 1f;
     public int DitherCellSize { get; set; } = 4;
+    public float DitherDarkAlpha { get; set; } = 0.38f;
     public int CaptureFrameRate { get; set; } = 30;
     public int OutputFrameRate { get; set; } = 60;
     public bool IsClickThrough { get; set; } = true;
     public float VhsGlitchAmount { get; set; } = 0.35f;
     public float VhsNoiseAmount { get; set; } = 0.18f;
+    public string VhsTintColorHex { get; set; } = "#FF5050";
+    public float VhsTrackingStrength { get; set; } = 0.35f;
+    public float CrtMotionStrength { get; set; } = 0.4f;
+    public string PreferredGraphicsAdapterId { get; set; } = string.Empty;
+
+    public string CaptureBackendName => _captureBackend.BackendName;
 
     private void OverlayWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
@@ -86,6 +97,16 @@ public sealed partial class OverlayWindow : Window
     public void RefreshWindowBehavior()
     {
         EnsureWindowConfigured();
+    }
+
+    public void RecreateCaptureBackend()
+    {
+        _captureBackend.Dispose();
+        _captureBackend = ScreenCapture.CreateBackend(PreferredGraphicsAdapterId);
+        _pixelBuffer = null;
+        _captureWidth = 0;
+        _captureHeight = 0;
+        _hasCapturedFrame = false;
     }
 
     private void EnsureWindowConfigured()
@@ -131,11 +152,12 @@ public sealed partial class OverlayWindow : Window
 
     private void CanvasControl_Update(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
     {
-        sender.TargetElapsedTime = TimeSpan.FromSeconds(1d / Math.Clamp(OutputFrameRate, 5, 60));
+        SyncRenderSettings();
+        sender.TargetElapsedTime = TimeSpan.FromSeconds(1d / Math.Clamp(_renderSettings.OutputFrameRate, 5, 60));
 
-        if (CurrentEffect == EffectType.CRT || CurrentEffect == EffectType.GameBoy || CurrentEffect == EffectType.VHS || CurrentEffect == EffectType.Dither)
+        if (_renderSettings.EffectType == EffectType.CRT || _renderSettings.EffectType == EffectType.GameBoy || _renderSettings.EffectType == EffectType.VHS || _renderSettings.EffectType == EffectType.Dither)
         {
-            _scanlineY += CrtSpeed * (float)args.Timing.ElapsedTime.TotalSeconds * 60f;
+            _scanlineY += (_renderSettings.CrtSpeed + (_renderSettings.CrtMotionStrength * 24f)) * (float)args.Timing.ElapsedTime.TotalSeconds * 60f;
             if (_scanlineY > sender.Size.Height)
             {
                 _scanlineY = 0;
@@ -143,17 +165,16 @@ public sealed partial class OverlayWindow : Window
         }
 
         _captureAccumulator += args.Timing.ElapsedTime;
-        TimeSpan captureInterval = TimeSpan.FromSeconds(1d / Math.Clamp(CaptureFrameRate, 5, 60));
+        TimeSpan captureInterval = TimeSpan.FromSeconds(1d / Math.Clamp(_renderSettings.CaptureFrameRate, 5, 60));
         if (_captureAccumulator < captureInterval)
         {
             return;
         }
 
         _captureAccumulator = TimeSpan.Zero;
-        _pixelTintColor = ParseHexColor(PixelMonochromeColorHex, Color.FromArgb(255, 155, 188, 15));
 
-        int screenWidth = ScreenCapture.ScreenWidth;
-        int screenHeight = ScreenCapture.ScreenHeight;
+        int screenWidth = _captureBackend.ScreenWidth;
+        int screenHeight = _captureBackend.ScreenHeight;
         if (screenWidth <= 0 || screenHeight <= 0)
         {
             return;
@@ -161,10 +182,10 @@ public sealed partial class OverlayWindow : Window
 
         int destWidth = screenWidth;
         int destHeight = screenHeight;
-        if (CurrentEffect == EffectType.Pixelate || CurrentEffect == EffectType.GameBoy || CurrentEffect == EffectType.VHS || CurrentEffect == EffectType.Dither)
+        if (_renderSettings.EffectType == EffectType.Pixelate || _renderSettings.EffectType == EffectType.GameBoy || _renderSettings.EffectType == EffectType.VHS || _renderSettings.EffectType == EffectType.Dither)
         {
-            destWidth = Math.Max((int)(screenWidth / Math.Max(PixelSize, 1f)), 1);
-            destHeight = Math.Max((int)(screenHeight / Math.Max(PixelSize, 1f)), 1);
+            destWidth = Math.Max((int)(screenWidth / Math.Max(_renderSettings.PixelSize, 1f)), 1);
+            destHeight = Math.Max((int)(screenHeight / Math.Max(_renderSettings.PixelSize, 1f)), 1);
         }
 
         if (_pixelBuffer == null || _captureWidth != destWidth || _captureHeight != destHeight)
@@ -177,7 +198,7 @@ public sealed partial class OverlayWindow : Window
 
         if (_pixelBuffer != null)
         {
-            _hasCapturedFrame = ScreenCapture.CaptureScreen(destWidth, destHeight, _pixelBuffer);
+            _hasCapturedFrame = _captureBackend.TryCapture(destWidth, destHeight, _pixelBuffer);
         }
     }
 
@@ -189,19 +210,19 @@ public sealed partial class OverlayWindow : Window
 
         DrawCapturedScreen(sender, drawingSession, width, height);
 
-        if (CurrentEffect == EffectType.CRT)
+        if (_renderSettings.EffectType == EffectType.CRT)
         {
             DrawCrtOverlay(drawingSession, width, height);
         }
-        else if (CurrentEffect == EffectType.GameBoy)
+        else if (_renderSettings.EffectType == EffectType.GameBoy)
         {
             DrawGameBoyOverlay(drawingSession, width, height);
         }
-        else if (CurrentEffect == EffectType.VHS)
+        else if (_renderSettings.EffectType == EffectType.VHS)
         {
             DrawVhsOverlay(drawingSession, width, height);
         }
-        else if (CurrentEffect == EffectType.Dither)
+        else if (_renderSettings.EffectType == EffectType.Dither)
         {
             DrawDitherOverlay(drawingSession, width, height);
         }
@@ -234,7 +255,7 @@ public sealed partial class OverlayWindow : Window
             _screenBitmap.SetPixelBytes(_pixelBuffer);
         }
 
-        if (CurrentEffect == EffectType.Pixelate)
+        if (_renderSettings.EffectType == EffectType.Pixelate)
         {
             ICanvasImage source = PixelMonochrome ? CreatePixelMonochromeEffect() : _screenBitmap!;
             drawingSession.DrawImage(
@@ -251,26 +272,27 @@ public sealed partial class OverlayWindow : Window
 
     private void DrawGameBoyOverlay(CanvasDrawingSession drawingSession, float width, float height)
     {
-        var tint = Color.FromArgb(255, 15, 56, 15);
-        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb(40, 9, 25, 9));
+        var tint = _renderSettings.GameBoyDarkColor;
+        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb((byte)Math.Clamp((int)(40 * _renderSettings.GameBoyBrightness), 0, 255), 9, 25, 9));
         if (_screenBitmap != null)
         {
             drawingSession.DrawImage(_screenBitmap, new Windows.Foundation.Rect(0, 0, width, height));
         }
 
-        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb(48, tint.R, tint.G, tint.B));
+        byte tintAlpha = (byte)Math.Clamp((int)(48 * _renderSettings.GameBoyBrightness), 0, 255);
+        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb(tintAlpha, tint.R, tint.G, tint.B));
 
-        float cellSize = Math.Clamp(GameBoyPixelSize, 2f, 8f);
+        float cellSize = Math.Clamp(_renderSettings.GameBoyPixelSize, 2f, 8f);
         for (float y = 0; y < height; y += cellSize)
         {
             for (float x = 0; x < width; x += cellSize)
             {
                 float alpha = ((x + y) % (cellSize * 2)) < cellSize ? 24f : 8f;
-                if (GameBoyGhosting)
+                if (_renderSettings.GameBoyGhosting)
                 {
                     alpha += 10f;
                 }
-                drawingSession.FillRectangle(x, y, cellSize - 1, cellSize - 1, Color.FromArgb((byte)alpha, 15, 56, 15));
+                drawingSession.FillRectangle(x, y, cellSize - 1, cellSize - 1, Color.FromArgb((byte)alpha, tint.R, tint.G, tint.B));
             }
         }
     }
@@ -279,7 +301,7 @@ public sealed partial class OverlayWindow : Window
     {
         if (_screenBitmap != null)
         {
-            float jitter = VhsGlitchAmount * 18f;
+            float jitter = _renderSettings.VhsGlitchAmount * (12f + (_renderSettings.VhsTrackingStrength * 18f));
             drawingSession.DrawImage(
                 _screenBitmap,
                 new Windows.Foundation.Rect(jitter * MathF.Sin(_scanlineY * 0.08f), 0, width + jitter, height),
@@ -288,9 +310,9 @@ public sealed partial class OverlayWindow : Window
                 CanvasImageInterpolation.Linear);
         }
 
-        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb((byte)(VhsNoiseAmount * 90), 12, 12, 12));
-        drawingSession.DrawLine(0, height * 0.88f, width, height * 0.88f, Color.FromArgb(120, 180, 120, 120), Math.Max(2f, VhsGlitchAmount * 8f));
-        drawingSession.DrawLine(0, height * 0.92f, width, height * 0.92f, Color.FromArgb(80, 255, 80, 80), 1f);
+        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb((byte)(_renderSettings.VhsNoiseAmount * 90), 12, 12, 12));
+        drawingSession.DrawLine(0, height * 0.88f, width, height * 0.88f, _renderSettings.VhsTintColor, Math.Max(2f, _renderSettings.VhsGlitchAmount * 8f));
+        drawingSession.DrawLine(0, height * 0.92f, width, height * 0.92f, Color.FromArgb(80, 255, 80, 80), Math.Max(1f, _renderSettings.VhsTrackingStrength * 4f));
     }
 
     private void DrawDitherOverlay(CanvasDrawingSession drawingSession, float width, float height)
@@ -300,61 +322,86 @@ public sealed partial class OverlayWindow : Window
             drawingSession.DrawImage(_screenBitmap, new Windows.Foundation.Rect(0, 0, width, height));
         }
 
-        float step = Math.Clamp(DitherCellSize, 2, 12);
+        float step = Math.Clamp(_renderSettings.DitherCellSize, 2, 12);
         for (float y = 0; y < height; y += step)
         {
             for (float x = 0; x < width; x += step)
             {
                 bool dark = (((int)x + (int)y) / 4) % 2 == 0;
-                drawingSession.FillRectangle(x, y, step, step, dark ? Color.FromArgb(38, 0, 0, 0) : Color.FromArgb(0, 0, 0, 0));
+                drawingSession.FillRectangle(x, y, step, step, dark ? _renderSettings.DitherDarkColor : _renderSettings.DitherLightColor);
             }
         }
     }
 
     private void DrawCrtOverlay(CanvasDrawingSession drawingSession, float width, float height)
     {
-        Color filterColor = CrtColorFilterIndex switch
-        {
-            0 => Color.FromArgb((byte)(CrtOpacity * 255), 255, 176, 0),
-            1 => Color.FromArgb((byte)(CrtOpacity * 255), 0, 255, 0),
-            2 => Color.FromArgb((byte)(CrtOpacity * 255), 0, 0, 0),
-            _ => Color.FromArgb(0, 0, 0, 0)
-        };
+        drawingSession.FillRectangle(0, 0, width, height, _renderSettings.CrtFilterColor);
 
-        drawingSession.FillRectangle(0, 0, width, height, filterColor);
-
-        Color scanlineColor = Color.FromArgb((byte)(CrtOpacity * 100), 0, 0, 0);
-        float spacing = Math.Max(CrtScanlineWidth * 2f, 2f);
-        float thickness = Math.Max(CrtScanlineWidth, 1f);
+        float spacing = Math.Max(_renderSettings.CrtScanlineWidth * 2f, 2f);
+        float thickness = Math.Max(_renderSettings.CrtScanlineWidth, 1f);
         for (float y = _scanlineY % spacing; y < height; y += spacing)
         {
-            drawingSession.DrawLine(0, y, width, y, scanlineColor, thickness);
+            drawingSession.DrawLine(0, y, width, y, _renderSettings.CrtScanlineColor, thickness);
         }
     }
 
     private ColorMatrixEffect CreatePixelMonochromeEffect()
     {
-        float red = _pixelTintColor.R / 255f;
-        float green = _pixelTintColor.G / 255f;
-        float blue = _pixelTintColor.B / 255f;
+        float red = _renderSettings.PixelPrimaryColor.R / 255f;
+        float green = _renderSettings.PixelPrimaryColor.G / 255f;
+        float blue = _renderSettings.PixelPrimaryColor.B / 255f;
 
         return new ColorMatrixEffect
         {
             Source = _screenBitmap,
             ColorMatrix = new Matrix5x4
             {
-                M11 = 0.2126f * red,
-                M12 = 0.2126f * green,
-                M13 = 0.2126f * blue,
-                M21 = 0.7152f * red,
-                M22 = 0.7152f * green,
-                M23 = 0.7152f * blue,
-                M31 = 0.0722f * red,
-                M32 = 0.0722f * green,
-                M33 = 0.0722f * blue,
+                M11 = 0.2126f * red * _renderSettings.PixelBrightness,
+                M12 = 0.2126f * green * _renderSettings.PixelBrightness,
+                M13 = 0.2126f * blue * _renderSettings.PixelBrightness,
+                M21 = 0.7152f * red * _renderSettings.PixelBrightness,
+                M22 = 0.7152f * green * _renderSettings.PixelBrightness,
+                M23 = 0.7152f * blue * _renderSettings.PixelBrightness,
+                M31 = 0.0722f * red * _renderSettings.PixelBrightness,
+                M32 = 0.0722f * green * _renderSettings.PixelBrightness,
+                M33 = 0.0722f * blue * _renderSettings.PixelBrightness,
                 M44 = 1f
             }
         };
+    }
+
+    private void SyncRenderSettings()
+    {
+        _renderSettings.EffectType = CurrentEffect;
+        _renderSettings.CaptureFrameRate = CaptureFrameRate;
+        _renderSettings.OutputFrameRate = OutputFrameRate;
+        _renderSettings.IsClickThrough = IsClickThrough;
+        _renderSettings.PixelSize = PixelSize;
+        _renderSettings.PixelMonochrome = PixelMonochrome;
+        _renderSettings.PixelPrimaryColor = ParseHexColor(PixelMonochromeColorHex, Color.FromArgb(255, 155, 188, 15));
+        _renderSettings.PixelBrightness = PixelBrightness;
+        _renderSettings.CrtSpeed = CrtSpeed;
+        _renderSettings.CrtOpacity = CrtOpacity;
+        _renderSettings.CrtMotionStrength = CrtMotionStrength;
+        _renderSettings.CrtScanlineWidth = CrtScanlineWidth;
+        _renderSettings.CrtFilterColor = CrtColorFilterIndex switch
+        {
+            0 => Color.FromArgb((byte)(CrtOpacity * 255), 255, 176, 0),
+            1 => Color.FromArgb((byte)(CrtOpacity * 255), 0, 255, 0),
+            2 => Color.FromArgb((byte)(CrtOpacity * 255), 0, 0, 0),
+            _ => Color.FromArgb(0, 0, 0, 0)
+        };
+        _renderSettings.CrtScanlineColor = Color.FromArgb((byte)(CrtOpacity * 100), 0, 0, 0);
+        _renderSettings.GameBoyPixelSize = GameBoyPixelSize;
+        _renderSettings.GameBoyGhosting = GameBoyGhosting;
+        _renderSettings.GameBoyBrightness = GameBoyBrightness;
+        _renderSettings.VhsGlitchAmount = VhsGlitchAmount;
+        _renderSettings.VhsNoiseAmount = VhsNoiseAmount;
+        _renderSettings.VhsTintColor = ParseHexColor(VhsTintColorHex, Color.FromArgb(96, 255, 80, 80));
+        _renderSettings.VhsTrackingStrength = VhsTrackingStrength;
+        _renderSettings.DitherCellSize = DitherCellSize;
+        byte darkAlpha = (byte)Math.Clamp((int)(DitherDarkAlpha * 255), 0, 255);
+        _renderSettings.DitherDarkColor = Color.FromArgb(darkAlpha, 0, 0, 0);
     }
 
     private static Color ParseHexColor(string? hex, Color fallback)

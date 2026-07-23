@@ -18,16 +18,26 @@ public class AppSettings
     public int PixelSize { get; set; } = 8; // 2 to 32 pixels
     public bool PixelMonochrome { get; set; } = false;
     public string PixelMonochromeColor { get; set; } = "#00FF00"; // GameBoy Green, Amber, Cyan, Gray
+    public double PixelBrightness { get; set; } = 1.0;
     public int CrtScanlineSpeed { get; set; } = 3; // 0 to 10
     public double CrtScanlineIntensity { get; set; } = 0.45; // 0.0 to 1.0
     public string CrtColorFilter { get; set; } = "Retro RGB"; // None, Amber, Green, Retro RGB, Monochrome
     public int CrtScanlineWidth { get; set; } = 2; // 1 to 4 px
+    public double CrtMotionStrength { get; set; } = 0.4;
     public bool IsClickThrough { get; set; } = true;
     public float VhsGlitchAmount { get; set; } = 0.35f;
     public float VhsNoiseAmount { get; set; } = 0.18f;
+    public string VhsTintColor { get; set; } = "#FF5050";
+    public double VhsTrackingStrength { get; set; } = 0.35;
     public int GameBoyPixelSize { get; set; } = 4;
     public bool GameBoyGhosting { get; set; } = true;
+    public string GameBoyDarkColor { get; set; } = "#0F380F";
+    public string GameBoyLightColor { get; set; } = "#8BAC0F";
+    public double GameBoyBrightness { get; set; } = 1.0;
     public int DitherCellSize { get; set; } = 4;
+    public string DitherDarkColor { get; set; } = "#000000";
+    public double DitherDarkAlpha { get; set; } = 0.38;
+    public string PreferredGraphicsAdapterId { get; set; } = string.Empty;
 }
 
 public static class SettingsManager

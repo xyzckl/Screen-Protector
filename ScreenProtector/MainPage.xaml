@@ -9,6 +9,7 @@
         mc:Ignorable="d">
 
         <NavigationView x:Name="SettingsNavigationView"
+                        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
                         IsBackButtonVisible="Collapsed"
                         IsSettingsVisible="False"
                         IsPaneOpen="False"
@@ -108,6 +109,15 @@
                                                                 <x:String>矩阵绿色</x:String>
                                                                 <x:String>无</x:String>
                                                         </ComboBox>
+
+                                                        <TextBlock x:Name="CrtMotionStrengthLabel"
+                                                                   Text="动态强度"/>
+                                                        <Slider x:Name="CrtMotionStrengthSlider"
+                                                                Minimum="0"
+                                                                Maximum="1"
+                                                                StepFrequency="0.05"
+                                                                Value="0.4"
+                                                                ValueChanged="CrtSettings_ValueChanged"/>
                                                 </StackPanel>
 
                                                 <StackPanel x:Name="PixelSettingsPanel"
@@ -141,6 +151,15 @@
                                                                 <x:String>青色</x:String>
                                                                 <x:String>灰度</x:String>
                                                         </ComboBox>
+
+                                                        <TextBlock x:Name="PixelBrightnessLabel"
+                                                                   Text="亮度"/>
+                                                        <Slider x:Name="PixelBrightnessSlider"
+                                                                Minimum="0.5"
+                                                                Maximum="1.5"
+                                                                StepFrequency="0.05"
+                                                                Value="1"
+                                                                ValueChanged="PixelSettings_ValueChanged"/>
                                                 </StackPanel>
 
                                                 <StackPanel x:Name="GameBoySettingsPanel"
@@ -159,6 +178,14 @@
                                                                       Header="残影效果"
                                                                       IsOn="True"
                                                                       Toggled="GameBoySettings_Toggled"/>
+                                                        <TextBlock x:Name="GameBoyBrightnessLabel"
+                                                                   Text="亮度"/>
+                                                        <Slider x:Name="GameBoyBrightnessSlider"
+                                                                Minimum="0.5"
+                                                                Maximum="1.5"
+                                                                StepFrequency="0.05"
+                                                                Value="1"
+                                                                ValueChanged="GameBoySettings_ValueChanged"/>
                                                 </StackPanel>
 
                                                 <StackPanel x:Name="VhsSettingsPanel"
@@ -181,6 +208,25 @@
                                                                 StepFrequency="0.01"
                                                                 Value="0.18"
                                                                 ValueChanged="VhsSettings_ValueChanged"/>
+                                                        <TextBlock x:Name="VhsTintColorLabel"
+                                                                   Text="色偏"/>
+                                                        <ComboBox x:Name="VhsTintColorComboBox"
+                                                                  SelectedIndex="0"
+                                                                  Width="200"
+                                                                  SelectionChanged="VhsSettings_SelectionChanged">
+                                                                <x:String>红色偏移</x:String>
+                                                                <x:String>蓝色偏移</x:String>
+                                                                <x:String>绿色偏移</x:String>
+                                                                <x:String>紫色偏移</x:String>
+                                                        </ComboBox>
+                                                        <TextBlock x:Name="VhsTrackingStrengthLabel"
+                                                                   Text="磁带跟踪强度"/>
+                                                        <Slider x:Name="VhsTrackingStrengthSlider"
+                                                                Minimum="0"
+                                                                Maximum="1"
+                                                                StepFrequency="0.05"
+                                                                Value="0.35"
+                                                                ValueChanged="VhsSettings_ValueChanged"/>
                                                 </StackPanel>
 
                                                 <StackPanel x:Name="DitherSettingsPanel"
@@ -194,6 +240,14 @@
                                                                 Minimum="2"
                                                                 Maximum="12"
                                                                 Value="4"
+                                                                ValueChanged="DitherSettings_ValueChanged"/>
+                                                        <TextBlock x:Name="DitherDarkAlphaLabel"
+                                                                   Text="暗部强度"/>
+                                                        <Slider x:Name="DitherDarkAlphaSlider"
+                                                                Minimum="0"
+                                                                Maximum="1"
+                                                                StepFrequency="0.05"
+                                                                Value="0.38"
                                                                 ValueChanged="DitherSettings_ValueChanged"/>
                                                 </StackPanel>
 
@@ -284,6 +338,26 @@
                                                 <ToggleSwitch x:Name="RunAtStartupToggle"
                                                               Header="开机自启"
                                                               Toggled="RunAtStartupToggle_Toggled"/>
+
+                                                <StackPanel Spacing="8"
+                                                            Margin="0,8,0,0">
+                                                        <TextBlock x:Name="GraphicsAdapterLabel"
+                                                                   Text="渲染显卡"
+                                                                   Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                                        <TextBlock x:Name="GraphicsAdapterHintText"
+                                                                   Text="默认使用当前显示输出显卡。需要切换时手动加载列表。"
+                                                                   TextWrapping="WrapWholeWords"
+                                                                   Opacity="0.78"/>
+                                                        <StackPanel Orientation="Horizontal"
+                                                                    Spacing="8">
+                                                                <ComboBox x:Name="GraphicsAdapterComboBox"
+                                                                          Width="420"
+                                                                          SelectionChanged="GraphicsAdapterComboBox_SelectionChanged"/>
+                                                                <Button x:Name="LoadGraphicsAdaptersButton"
+                                                                        Content="加载显卡列表"
+                                                                        Click="LoadGraphicsAdaptersButton_Click"/>
+                                                        </StackPanel>
+                                                </StackPanel>
                                         </StackPanel>
                                 </ScrollViewer>
                         </Grid>

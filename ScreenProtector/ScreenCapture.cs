@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Windows.Graphics.Capture;
 
 namespace ScreenProtector;
 
@@ -70,6 +71,25 @@ public static class ScreenCapture
 
     public static int ScreenWidth => _screenWidth.Value;  // SM_CXSCREEN
     public static int ScreenHeight => _screenHeight.Value; // SM_CYSCREEN
+
+    public static IScreenCaptureBackend CreateBackend(string? preferredAdapterId = null)
+    {
+        try
+        {
+            var backend = new WinRtScreenCaptureBackend(preferredAdapterId);
+            if (backend.IsSupported)
+            {
+                return backend;
+            }
+
+            backend.Dispose();
+        }
+        catch
+        {
+        }
+
+        return new GdiScreenCaptureBackend();
+    }
 
     /// <summary>
     /// Captures the primary screen into a BGRA byte array.
@@ -143,6 +163,50 @@ public static class ScreenCapture
 
             if (hdcScreen != IntPtr.Zero)
                 ReleaseDC(IntPtr.Zero, hdcScreen);
+        }
+    }
+
+    private sealed class GdiScreenCaptureBackend : IScreenCaptureBackend
+    {
+        public int ScreenWidth => ScreenCapture.ScreenWidth;
+
+        public int ScreenHeight => ScreenCapture.ScreenHeight;
+
+        public string BackendName => "GDI";
+
+        public bool TryCapture(int destinationWidth, int destinationHeight, byte[] pixelBuffer)
+        {
+            return CaptureScreen(destinationWidth, destinationHeight, pixelBuffer);
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class WinRtScreenCaptureBackend : IScreenCaptureBackend
+    {
+        public int ScreenWidth => ScreenCapture.ScreenWidth;
+
+        public int ScreenHeight => ScreenCapture.ScreenHeight;
+
+        public string BackendName => "WinRT GraphicsCapture";
+
+        public bool IsSupported { get; }
+
+        public WinRtScreenCaptureBackend(string? preferredAdapterId)
+        {
+            IsSupported = GraphicsCaptureSession.IsSupported();
+            _ = preferredAdapterId;
+        }
+
+        public bool TryCapture(int destinationWidth, int destinationHeight, byte[] pixelBuffer)
+        {
+            return CaptureScreen(destinationWidth, destinationHeight, pixelBuffer);
+        }
+
+        public void Dispose()
+        {
         }
     }
 }
