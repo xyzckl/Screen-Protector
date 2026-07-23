@@ -59,7 +59,7 @@ public sealed partial class OverlayWindow : Window
         Activated += OverlayWindow_Activated;
     }
 
-    public enum EffectType { CRT, Pixelate }
+    public enum EffectType { CRT, Pixelate, GameBoy, VHS, Dither }
 
     public EffectType CurrentEffect { get; set; } = EffectType.CRT;
     public float CrtSpeed { get; set; } = 18f;
@@ -69,9 +69,14 @@ public sealed partial class OverlayWindow : Window
     public float PixelSize { get; set; } = 16f;
     public bool PixelMonochrome { get; set; }
     public string PixelMonochromeColorHex { get; set; } = "#9BBC0F";
+    public float GameBoyPixelSize { get; set; } = 4f;
+    public bool GameBoyGhosting { get; set; } = true;
+    public int DitherCellSize { get; set; } = 4;
     public int CaptureFrameRate { get; set; } = 30;
     public int OutputFrameRate { get; set; } = 60;
     public bool IsClickThrough { get; set; } = true;
+    public float VhsGlitchAmount { get; set; } = 0.35f;
+    public float VhsNoiseAmount { get; set; } = 0.18f;
 
     private void OverlayWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
@@ -128,7 +133,7 @@ public sealed partial class OverlayWindow : Window
     {
         sender.TargetElapsedTime = TimeSpan.FromSeconds(1d / Math.Clamp(OutputFrameRate, 5, 60));
 
-        if (CurrentEffect == EffectType.CRT)
+        if (CurrentEffect == EffectType.CRT || CurrentEffect == EffectType.GameBoy || CurrentEffect == EffectType.VHS || CurrentEffect == EffectType.Dither)
         {
             _scanlineY += CrtSpeed * (float)args.Timing.ElapsedTime.TotalSeconds * 60f;
             if (_scanlineY > sender.Size.Height)
@@ -156,7 +161,7 @@ public sealed partial class OverlayWindow : Window
 
         int destWidth = screenWidth;
         int destHeight = screenHeight;
-        if (CurrentEffect == EffectType.Pixelate)
+        if (CurrentEffect == EffectType.Pixelate || CurrentEffect == EffectType.GameBoy || CurrentEffect == EffectType.VHS || CurrentEffect == EffectType.Dither)
         {
             destWidth = Math.Max((int)(screenWidth / Math.Max(PixelSize, 1f)), 1);
             destHeight = Math.Max((int)(screenHeight / Math.Max(PixelSize, 1f)), 1);
@@ -187,6 +192,18 @@ public sealed partial class OverlayWindow : Window
         if (CurrentEffect == EffectType.CRT)
         {
             DrawCrtOverlay(drawingSession, width, height);
+        }
+        else if (CurrentEffect == EffectType.GameBoy)
+        {
+            DrawGameBoyOverlay(drawingSession, width, height);
+        }
+        else if (CurrentEffect == EffectType.VHS)
+        {
+            DrawVhsOverlay(drawingSession, width, height);
+        }
+        else if (CurrentEffect == EffectType.Dither)
+        {
+            DrawDitherOverlay(drawingSession, width, height);
         }
     }
 
@@ -230,6 +247,68 @@ public sealed partial class OverlayWindow : Window
         }
 
         drawingSession.DrawImage(_screenBitmap, new Windows.Foundation.Rect(0, 0, width, height));
+    }
+
+    private void DrawGameBoyOverlay(CanvasDrawingSession drawingSession, float width, float height)
+    {
+        var tint = Color.FromArgb(255, 15, 56, 15);
+        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb(40, 9, 25, 9));
+        if (_screenBitmap != null)
+        {
+            drawingSession.DrawImage(_screenBitmap, new Windows.Foundation.Rect(0, 0, width, height));
+        }
+
+        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb(48, tint.R, tint.G, tint.B));
+
+        float cellSize = Math.Clamp(GameBoyPixelSize, 2f, 8f);
+        for (float y = 0; y < height; y += cellSize)
+        {
+            for (float x = 0; x < width; x += cellSize)
+            {
+                float alpha = ((x + y) % (cellSize * 2)) < cellSize ? 24f : 8f;
+                if (GameBoyGhosting)
+                {
+                    alpha += 10f;
+                }
+                drawingSession.FillRectangle(x, y, cellSize - 1, cellSize - 1, Color.FromArgb((byte)alpha, 15, 56, 15));
+            }
+        }
+    }
+
+    private void DrawVhsOverlay(CanvasDrawingSession drawingSession, float width, float height)
+    {
+        if (_screenBitmap != null)
+        {
+            float jitter = VhsGlitchAmount * 18f;
+            drawingSession.DrawImage(
+                _screenBitmap,
+                new Windows.Foundation.Rect(jitter * MathF.Sin(_scanlineY * 0.08f), 0, width + jitter, height),
+                new Windows.Foundation.Rect(0, 0, _captureWidth, _captureHeight),
+                1f,
+                CanvasImageInterpolation.Linear);
+        }
+
+        drawingSession.FillRectangle(0, 0, width, height, Color.FromArgb((byte)(VhsNoiseAmount * 90), 12, 12, 12));
+        drawingSession.DrawLine(0, height * 0.88f, width, height * 0.88f, Color.FromArgb(120, 180, 120, 120), Math.Max(2f, VhsGlitchAmount * 8f));
+        drawingSession.DrawLine(0, height * 0.92f, width, height * 0.92f, Color.FromArgb(80, 255, 80, 80), 1f);
+    }
+
+    private void DrawDitherOverlay(CanvasDrawingSession drawingSession, float width, float height)
+    {
+        if (_screenBitmap != null)
+        {
+            drawingSession.DrawImage(_screenBitmap, new Windows.Foundation.Rect(0, 0, width, height));
+        }
+
+        float step = Math.Clamp(DitherCellSize, 2, 12);
+        for (float y = 0; y < height; y += step)
+        {
+            for (float x = 0; x < width; x += step)
+            {
+                bool dark = (((int)x + (int)y) / 4) % 2 == 0;
+                drawingSession.FillRectangle(x, y, step, step, dark ? Color.FromArgb(38, 0, 0, 0) : Color.FromArgb(0, 0, 0, 0));
+            }
+        }
     }
 
     private void DrawCrtOverlay(CanvasDrawingSession drawingSession, float width, float height)

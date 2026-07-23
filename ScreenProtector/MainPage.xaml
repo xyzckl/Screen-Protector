@@ -59,6 +59,9 @@
                                                                   SelectionChanged="EffectTypeComboBox_SelectionChanged">
                                                                 <x:String>CRT 扫描线</x:String>
                                                                 <x:String>像素化</x:String>
+                                                                <x:String>Game Boy 复古 LCD</x:String>
+                                                                <x:String>VHS 模拟磁带</x:String>
+                                                                <x:String>抖动网点风格</x:String>
                                                         </ComboBox>
                                                 </StackPanel>
 
@@ -138,6 +141,60 @@
                                                                 <x:String>青色</x:String>
                                                                 <x:String>灰度</x:String>
                                                         </ComboBox>
+                                                </StackPanel>
+
+                                                <StackPanel x:Name="GameBoySettingsPanel"
+                                                            Spacing="8"
+                                                            Visibility="Collapsed">
+                                                        <TextBlock Text="Game Boy 设置"
+                                                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                                                   Margin="0,16,0,0"/>
+                                                        <TextBlock Text="像素块大小"/>
+                                                        <Slider x:Name="GameBoyPixelSizeSlider"
+                                                                Minimum="2"
+                                                                Maximum="8"
+                                                                Value="4"
+                                                                ValueChanged="GameBoySettings_ValueChanged"/>
+                                                        <ToggleSwitch x:Name="GameBoyGhostingToggle"
+                                                                      Header="残影效果"
+                                                                      IsOn="True"
+                                                                      Toggled="GameBoySettings_Toggled"/>
+                                                </StackPanel>
+
+                                                <StackPanel x:Name="VhsSettingsPanel"
+                                                            Spacing="8"
+                                                            Visibility="Collapsed">
+                                                        <TextBlock Text="VHS 设置"
+                                                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                                                   Margin="0,16,0,0"/>
+                                                        <TextBlock Text="画面抖动"/>
+                                                        <Slider x:Name="VhsGlitchSlider"
+                                                                Minimum="0"
+                                                                Maximum="1"
+                                                                StepFrequency="0.01"
+                                                                Value="0.35"
+                                                                ValueChanged="VhsSettings_ValueChanged"/>
+                                                        <TextBlock Text="雪花噪点"/>
+                                                        <Slider x:Name="VhsNoiseSlider"
+                                                                Minimum="0"
+                                                                Maximum="1"
+                                                                StepFrequency="0.01"
+                                                                Value="0.18"
+                                                                ValueChanged="VhsSettings_ValueChanged"/>
+                                                </StackPanel>
+
+                                                <StackPanel x:Name="DitherSettingsPanel"
+                                                            Spacing="8"
+                                                            Visibility="Collapsed">
+                                                        <TextBlock Text="抖动网点设置"
+                                                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                                                   Margin="0,16,0,0"/>
+                                                        <TextBlock Text="网点尺寸"/>
+                                                        <Slider x:Name="DitherCellSizeSlider"
+                                                                Minimum="2"
+                                                                Maximum="12"
+                                                                Value="4"
+                                                                ValueChanged="DitherSettings_ValueChanged"/>
                                                 </StackPanel>
 
                                                 <ToggleSwitch x:Name="ClickThroughToggle"

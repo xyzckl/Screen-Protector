@@ -42,7 +42,6 @@ jobs:
         -c Release 
         -r win-x64 
         --self-contained false 
-        -p:PublishSingleFile=true 
         -p:PublishReadyToRun=true 
         -p:PublishTrimmed=false
         -p:WindowsPackageType=None
@@ -53,6 +52,11 @@ jobs:
       run: |
         $signtool = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object -Property FullName -Descending | Select-Object -First 1).FullName
         & $signtool sign /f ScreenProtector.pfx /p $env:CERT_PASSWORD /fd SHA256 ./publish_output/ScreenProtector.exe
+      shell: pwsh
+
+    - name: Package Publish Output
+      run: |
+        Compress-Archive -Path ./publish_output/* -DestinationPath ./ScreenProtector-win-x64.zip -Force
       shell: pwsh
 
     - name: Remove Pfx
@@ -67,7 +71,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ScreenProtector-win-x64
-        path: ./publish_output/ScreenProtector.exe
+        path: ./ScreenProtector-win-x64.zip
 
   release:
     needs: build
@@ -86,7 +90,7 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        files: ./artifact/ScreenProtector.exe
+        files: ./artifact/ScreenProtector-win-x64.zip
         name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false

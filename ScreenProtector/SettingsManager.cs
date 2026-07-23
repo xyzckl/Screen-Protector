@@ -23,6 +23,11 @@ public class AppSettings
     public string CrtColorFilter { get; set; } = "Retro RGB"; // None, Amber, Green, Retro RGB, Monochrome
     public int CrtScanlineWidth { get; set; } = 2; // 1 to 4 px
     public bool IsClickThrough { get; set; } = true;
+    public float VhsGlitchAmount { get; set; } = 0.35f;
+    public float VhsNoiseAmount { get; set; } = 0.18f;
+    public int GameBoyPixelSize { get; set; } = 4;
+    public bool GameBoyGhosting { get; set; } = true;
+    public int DitherCellSize { get; set; } = 4;
 }
 
 public static class SettingsManager

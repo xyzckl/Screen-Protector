@@ -10,6 +10,14 @@ public sealed partial class MainPage : Page
     private bool _isInitialized;
     private bool _isRecordingShortcut;
     private static readonly string[] PixelMonochromeColors = ["#9BBC0F", "#FFB000", "#00C8FF", "#C8C8C8"];
+    private static readonly OverlayWindow.EffectType[] EffectTypeMap =
+    [
+        OverlayWindow.EffectType.CRT,
+        OverlayWindow.EffectType.Pixelate,
+        OverlayWindow.EffectType.GameBoy,
+        OverlayWindow.EffectType.VHS,
+        OverlayWindow.EffectType.Dither
+    ];
 
     public MainPage()
     {
@@ -59,6 +67,9 @@ public sealed partial class MainPage : Page
             EffectTypeLabel.Text = "效果类型";
             EffectTypeComboBox.Items[0] = "CRT 扫描线";
             EffectTypeComboBox.Items[1] = "像素化";
+            EffectTypeComboBox.Items[2] = "Game Boy 复古 LCD";
+            EffectTypeComboBox.Items[3] = "VHS 模拟磁带";
+            EffectTypeComboBox.Items[4] = "抖动网点风格";
             CrtSettingsTitle.Text = "CRT 设置";
             ScanlineSpeedLabel.Text = "扫描线速度";
             ScanlineWidthLabel.Text = "扫描线宽度";
@@ -97,6 +108,9 @@ public sealed partial class MainPage : Page
             EffectTypeLabel.Text = "Effect Type";
             EffectTypeComboBox.Items[0] = "CRT Scanline";
             EffectTypeComboBox.Items[1] = "Pixelate";
+            EffectTypeComboBox.Items[2] = "Game Boy LCD";
+            EffectTypeComboBox.Items[3] = "VHS Tape";
+            EffectTypeComboBox.Items[4] = "Dithering";
             CrtSettingsTitle.Text = "CRT Settings";
             ScanlineSpeedLabel.Text = "Scanline Speed";
             ScanlineWidthLabel.Text = "Scanline Width";
@@ -141,7 +155,15 @@ public sealed partial class MainPage : Page
         _shortcutModifiers = settings.ShortcutModifiers;
         _shortcutKey = settings.ShortcutKey;
 
-        EffectTypeComboBox.SelectedIndex = settings.EffectType == 2 ? 0 : 1;
+        EffectTypeComboBox.SelectedIndex = settings.EffectType switch
+        {
+            1 => 0,
+            2 => 1,
+            3 => 2,
+            4 => 3,
+            6 => 4,
+            _ => 0
+        };
         CrtSpeedSlider.Value = Math.Clamp(settings.CrtScanlineSpeed, 1, 60);
         CrtScanlineWidthSlider.Value = Math.Clamp(settings.CrtScanlineWidth, 1, 4);
         CrtOpacitySlider.Value = Math.Clamp(settings.CrtScanlineIntensity, 0.0, 1.0);
@@ -159,10 +181,16 @@ public sealed partial class MainPage : Page
             var index when index >= 0 => index,
             _ => 0
         };
+        GameBoyPixelSizeSlider.Value = Math.Clamp(settings.GameBoyPixelSize, 2, 8);
+        GameBoyGhostingToggle.IsOn = settings.GameBoyGhosting;
+        VhsGlitchSlider.Value = Math.Clamp(settings.VhsGlitchAmount, 0f, 1f);
+        VhsNoiseSlider.Value = Math.Clamp(settings.VhsNoiseAmount, 0f, 1f);
+        DitherCellSizeSlider.Value = Math.Clamp(settings.DitherCellSize, 2, 12);
 
         CaptureFrameRateSlider.Value = Math.Clamp(settings.CaptureFrameRate, 5, 60);
         OutputFrameRateSlider.Value = Math.Clamp(settings.OutputFrameRate, 5, 60);
         ClickThroughToggle.IsOn = settings.IsClickThrough;
+        UpdateEffectPanels();
         UpdateShortcutText();
     }
 
@@ -174,7 +202,15 @@ public sealed partial class MainPage : Page
         settings.RunAtStartup = RunAtStartupToggle.IsOn;
         settings.ShortcutModifiers = _shortcutModifiers;
         settings.ShortcutKey = _shortcutKey;
-        settings.EffectType = EffectTypeComboBox.SelectedIndex == 0 ? 2 : 1;
+        settings.EffectType = EffectTypeComboBox.SelectedIndex switch
+        {
+            0 => 2,
+            1 => 1,
+            2 => 3,
+            3 => 4,
+            4 => 6,
+            _ => 1
+        };
         settings.CrtScanlineSpeed = (int)Math.Round(CrtSpeedSlider.Value);
         settings.CrtScanlineWidth = (int)Math.Round(CrtScanlineWidthSlider.Value);
         settings.CrtScanlineIntensity = CrtOpacitySlider.Value;
@@ -187,6 +223,11 @@ public sealed partial class MainPage : Page
         settings.PixelSize = (int)Math.Round(PixelSizeSlider.Value);
         settings.PixelMonochrome = PixelMonochromeToggle.IsOn;
         settings.PixelMonochromeColor = PixelMonochromeColors[Math.Clamp(PixelMonochromeColorComboBox.SelectedIndex, 0, PixelMonochromeColors.Length - 1)];
+        settings.GameBoyPixelSize = (int)Math.Round(GameBoyPixelSizeSlider.Value);
+        settings.GameBoyGhosting = GameBoyGhostingToggle.IsOn;
+        settings.VhsGlitchAmount = (float)VhsGlitchSlider.Value;
+        settings.VhsNoiseAmount = (float)VhsNoiseSlider.Value;
+        settings.DitherCellSize = (int)Math.Round(DitherCellSizeSlider.Value);
         settings.CaptureFrameRate = (int)Math.Round(CaptureFrameRateSlider.Value);
         settings.OutputFrameRate = (int)Math.Round(OutputFrameRateSlider.Value);
         settings.IsClickThrough = ClickThroughToggle.IsOn;
@@ -278,18 +319,7 @@ public sealed partial class MainPage : Page
     private void EffectTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!_isInitialized) return;
-        if (CrtSettingsPanel == null || PixelSettingsPanel == null) return;
-
-        if (EffectTypeComboBox.SelectedIndex == 0) // CRT
-        {
-            CrtSettingsPanel.Visibility = Visibility.Visible;
-            PixelSettingsPanel.Visibility = Visibility.Collapsed;
-        }
-        else // Pixelate
-        {
-            CrtSettingsPanel.Visibility = Visibility.Collapsed;
-            PixelSettingsPanel.Visibility = Visibility.Visible;
-        }
+        UpdateEffectPanels();
         UpdateOverlaySettings();
     }
 
@@ -318,6 +348,30 @@ public sealed partial class MainPage : Page
     }
 
     private void PixelSettings_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (!_isInitialized) return;
+        UpdateOverlaySettings();
+    }
+
+    private void GameBoySettings_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (!_isInitialized) return;
+        UpdateOverlaySettings();
+    }
+
+    private void GameBoySettings_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (!_isInitialized) return;
+        UpdateOverlaySettings();
+    }
+
+    private void VhsSettings_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (!_isInitialized) return;
+        UpdateOverlaySettings();
+    }
+
+    private void DitherSettings_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
         if (!_isInitialized) return;
         UpdateOverlaySettings();
@@ -434,22 +488,34 @@ public sealed partial class MainPage : Page
 
         if (_overlayWindow == null) return;
 
-        _overlayWindow.CurrentEffect = EffectTypeComboBox.SelectedIndex == 0 ?
-            OverlayWindow.EffectType.CRT : OverlayWindow.EffectType.Pixelate;
+        int effectIndex = Math.Clamp(EffectTypeComboBox.SelectedIndex, 0, EffectTypeMap.Length - 1);
+        _overlayWindow.CurrentEffect = EffectTypeMap[effectIndex];
 
-        // CRT
         _overlayWindow.CrtSpeed = (float)CrtSpeedSlider.Value;
         _overlayWindow.CrtOpacity = (float)CrtOpacitySlider.Value;
         _overlayWindow.CrtColorFilterIndex = CrtColorComboBox.SelectedIndex;
         _overlayWindow.CrtScanlineWidth = (float)CrtScanlineWidthSlider.Value;
-
-        // Pixelate
         _overlayWindow.PixelSize = (float)PixelSizeSlider.Value;
         _overlayWindow.PixelMonochrome = PixelMonochromeToggle.IsOn;
         _overlayWindow.PixelMonochromeColorHex = PixelMonochromeColors[Math.Clamp(PixelMonochromeColorComboBox.SelectedIndex, 0, PixelMonochromeColors.Length - 1)];
+        _overlayWindow.GameBoyPixelSize = (float)GameBoyPixelSizeSlider.Value;
+        _overlayWindow.GameBoyGhosting = GameBoyGhostingToggle.IsOn;
+        _overlayWindow.VhsGlitchAmount = (float)VhsGlitchSlider.Value;
+        _overlayWindow.VhsNoiseAmount = (float)VhsNoiseSlider.Value;
+        _overlayWindow.DitherCellSize = (int)Math.Round(DitherCellSizeSlider.Value);
         _overlayWindow.CaptureFrameRate = (int)Math.Round(CaptureFrameRateSlider.Value);
         _overlayWindow.OutputFrameRate = (int)Math.Round(OutputFrameRateSlider.Value);
         _overlayWindow.IsClickThrough = ClickThroughToggle.IsOn;
         _overlayWindow.RefreshWindowBehavior();
+    }
+
+    private void UpdateEffectPanels()
+    {
+        int index = EffectTypeComboBox.SelectedIndex;
+        CrtSettingsPanel.Visibility = index == 0 ? Visibility.Visible : Visibility.Collapsed;
+        PixelSettingsPanel.Visibility = index == 1 ? Visibility.Visible : Visibility.Collapsed;
+        GameBoySettingsPanel.Visibility = index == 2 ? Visibility.Visible : Visibility.Collapsed;
+        VhsSettingsPanel.Visibility = index == 3 ? Visibility.Visible : Visibility.Collapsed;
+        DitherSettingsPanel.Visibility = index == 4 ? Visibility.Visible : Visibility.Collapsed;
     }
 }
