@@ -8,11 +8,12 @@
     xmlns:canvas="using:Microsoft.Graphics.Canvas.UI.Xaml"
     mc:Ignorable="d">
 
-    <Grid Background="Transparent">
-        <canvas:CanvasAnimatedControl 
-            x:Name="CanvasControl" 
-            ClearColor="Transparent" 
-            Draw="CanvasControl_Draw" 
-            Update="CanvasControl_Update" />
+    <Grid x:Name="RootGrid"
+          Background="Transparent">
+        <canvas:CanvasAnimatedControl
+            x:Name="CanvasControl"
+            ClearColor="Transparent"
+            Draw="CanvasControl_Draw"
+            Update="CanvasControl_Update"/>
     </Grid>
 </Window>

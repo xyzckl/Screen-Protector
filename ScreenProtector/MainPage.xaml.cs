@@ -1,64 +1,220 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Input;
+using Microsoft.UI.Xaml.Input;
 
 namespace ScreenProtector;
 
 public sealed partial class MainPage : Page
 {
+    private bool _isInitialized;
+    private bool _isRecordingShortcut;
+    private static readonly string[] PixelMonochromeColors = ["#9BBC0F", "#FFB000", "#00C8FF", "#C8C8C8"];
+
     public MainPage()
     {
         InitializeComponent();
+        Loaded += MainPage_Loaded;
+    }
+
+    private void MainPage_Loaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= MainPage_Loaded;
+        LoadSettings();
+        UpdateLanguage();
+        SettingsNavigationView.SelectedItem = OverlayNavItem;
+        UpdateVisibleSection();
+        _isInitialized = true;
+        UpdateOverlaySettings();
+    }
+
+    private void SettingsNavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        UpdateVisibleSection();
         UpdateLanguage();
     }
 
     private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         UpdateLanguage();
+        SaveSettings();
     }
 
     private void UpdateLanguage()
     {
         bool isChinese = LanguageComboBox.SelectedIndex == 1;
+        bool isOverlaySection = ((SettingsNavigationView.SelectedItem as NavigationViewItem)?.Tag as string) != "app";
 
         if (isChinese)
         {
-            SystemSettingsTitle.Text = "系统设置";
-            LanguageLabel.Text = "语言 / Language";
-            ShortcutLabel.Text = "切换快捷键:";
-            ShortcutTextBox.PlaceholderText = "按下按键...";
+            OverlayNavItem.Content = "遮罩设置";
+            AppNavItem.Content = "软件设置";
+            PageTitleText.Text = isOverlaySection ? "遮罩设置" : "软件设置";
+            EffectTypeLabel.Text = "效果类型";
+            EffectTypeComboBox.Items[0] = "CRT 扫描线";
+            EffectTypeComboBox.Items[1] = "像素化";
+            CrtSettingsTitle.Text = "CRT 设置";
+            ScanlineSpeedLabel.Text = "扫描线速度";
+            ScanlineWidthLabel.Text = "扫描线宽度";
+            EffectOpacityLabel.Text = "效果不透明度";
+            ColorFilterLabel.Text = "颜色滤镜";
+            CrtColorComboBox.Items[0] = "经典琥珀";
+            CrtColorComboBox.Items[1] = "矩阵绿色";
+            CrtColorComboBox.Items[2] = "无";
+            PixelSettingsTitle.Text = "像素化设置";
+            PixelSizeLabel.Text = "像素大小";
+            PixelMonochromeToggle.Header = "单色模式";
+            PixelMonochromeColorLabel.Text = "单色颜色";
+            PixelMonochromeColorComboBox.Items[0] = "掌机绿色";
+            PixelMonochromeColorComboBox.Items[1] = "琥珀";
+            PixelMonochromeColorComboBox.Items[2] = "青色";
+            PixelMonochromeColorComboBox.Items[3] = "灰度";
+            SystemSettingsTitle.Text = "软件设置";
+            LanguageLabel.Text = "语言";
+            ShortcutLabel.Text = "切换快捷键";
+            ShortcutTextBox.PlaceholderText = _isRecordingShortcut ? "现在按下 Ctrl / Alt / Shift + 其它键..." : "点击开始录制后按组合键...";
+            RecordShortcutButton.Content = _isRecordingShortcut ? "正在录制..." : "开始录制";
             ClearShortcutButton.Content = "清除";
             RunInBackgroundToggle.Header = "后台运行 (系统托盘)";
             RunAtStartupToggle.Header = "开机自启";
+            ClickThroughToggle.Header = "遮罩穿透点击";
+            CaptureFrameRateLabel.Text = $"捕捉帧率: {(int)CaptureFrameRateSlider.Value} FPS";
+            OutputFrameRateLabel.Text = $"输出帧率: {(int)OutputFrameRateSlider.Value} FPS";
             ShowOverlayBtn.Content = "显示遮罩";
             CloseOverlayBtn.Content = "关闭遮罩";
-
-            // Update other UI elements if needed
         }
         else
         {
-            SystemSettingsTitle.Text = "System Settings";
-            LanguageLabel.Text = "Language / 语言";
-            ShortcutLabel.Text = "Toggle Shortcut:";
-            ShortcutTextBox.PlaceholderText = "Press keys...";
+            OverlayNavItem.Content = "Overlay";
+            AppNavItem.Content = "App";
+            PageTitleText.Text = isOverlaySection ? "Overlay Settings" : "App Settings";
+            EffectTypeLabel.Text = "Effect Type";
+            EffectTypeComboBox.Items[0] = "CRT Scanline";
+            EffectTypeComboBox.Items[1] = "Pixelate";
+            CrtSettingsTitle.Text = "CRT Settings";
+            ScanlineSpeedLabel.Text = "Scanline Speed";
+            ScanlineWidthLabel.Text = "Scanline Width";
+            EffectOpacityLabel.Text = "Effect Opacity";
+            ColorFilterLabel.Text = "Color Filter";
+            CrtColorComboBox.Items[0] = "Classic Amber";
+            CrtColorComboBox.Items[1] = "Matrix Green";
+            CrtColorComboBox.Items[2] = "None";
+            PixelSettingsTitle.Text = "Pixelate Settings";
+            PixelSizeLabel.Text = "Pixel Size";
+            PixelMonochromeToggle.Header = "Monochrome";
+            PixelMonochromeColorLabel.Text = "Monochrome Color";
+            PixelMonochromeColorComboBox.Items[0] = "Game Boy Green";
+            PixelMonochromeColorComboBox.Items[1] = "Amber";
+            PixelMonochromeColorComboBox.Items[2] = "Cyan";
+            PixelMonochromeColorComboBox.Items[3] = "Gray";
+            SystemSettingsTitle.Text = "App Settings";
+            LanguageLabel.Text = "Language";
+            ShortcutLabel.Text = "Toggle Shortcut";
+            ShortcutTextBox.PlaceholderText = _isRecordingShortcut ? "Press Ctrl / Alt / Shift + another key now..." : "Click record, then press a shortcut...";
+            RecordShortcutButton.Content = _isRecordingShortcut ? "Recording..." : "Record";
             ClearShortcutButton.Content = "Clear";
             RunInBackgroundToggle.Header = "Run in Background (System Tray)";
             RunAtStartupToggle.Header = "Run at Startup";
+            ClickThroughToggle.Header = "Click-through Overlay";
+            CaptureFrameRateLabel.Text = $"Capture Frame Rate: {(int)CaptureFrameRateSlider.Value} FPS";
+            OutputFrameRateLabel.Text = $"Output Frame Rate: {(int)OutputFrameRateSlider.Value} FPS";
             ShowOverlayBtn.Content = "Show Overlay";
             CloseOverlayBtn.Content = "Close Overlay";
         }
+
+        UpdateShortcutText();
+    }
+
+    private void LoadSettings()
+    {
+        var settings = SettingsManager.Current;
+
+        LanguageComboBox.SelectedIndex = settings.Language == "en" ? 0 : 1;
+        RunInBackgroundToggle.IsOn = settings.RunInBackground;
+        RunAtStartupToggle.IsOn = settings.RunAtStartup;
+        _shortcutModifiers = settings.ShortcutModifiers;
+        _shortcutKey = settings.ShortcutKey;
+
+        EffectTypeComboBox.SelectedIndex = settings.EffectType == 2 ? 0 : 1;
+        CrtSpeedSlider.Value = Math.Clamp(settings.CrtScanlineSpeed, 1, 60);
+        CrtScanlineWidthSlider.Value = Math.Clamp(settings.CrtScanlineWidth, 1, 4);
+        CrtOpacitySlider.Value = Math.Clamp(settings.CrtScanlineIntensity, 0.0, 1.0);
+        CrtColorComboBox.SelectedIndex = settings.CrtColorFilter switch
+        {
+            "Amber" => 0,
+            "Green" => 1,
+            _ => 2
+        };
+
+        PixelSizeSlider.Value = Math.Clamp(settings.PixelSize, 2, 64);
+        PixelMonochromeToggle.IsOn = settings.PixelMonochrome;
+        PixelMonochromeColorComboBox.SelectedIndex = Array.IndexOf(PixelMonochromeColors, settings.PixelMonochromeColor) switch
+        {
+            var index when index >= 0 => index,
+            _ => 0
+        };
+
+        CaptureFrameRateSlider.Value = Math.Clamp(settings.CaptureFrameRate, 5, 60);
+        OutputFrameRateSlider.Value = Math.Clamp(settings.OutputFrameRate, 5, 60);
+        ClickThroughToggle.IsOn = settings.IsClickThrough;
+        UpdateShortcutText();
+    }
+
+    private void SaveSettings()
+    {
+        var settings = SettingsManager.Current;
+        settings.Language = LanguageComboBox.SelectedIndex == 0 ? "en" : "zh-CN";
+        settings.RunInBackground = RunInBackgroundToggle.IsOn;
+        settings.RunAtStartup = RunAtStartupToggle.IsOn;
+        settings.ShortcutModifiers = _shortcutModifiers;
+        settings.ShortcutKey = _shortcutKey;
+        settings.EffectType = EffectTypeComboBox.SelectedIndex == 0 ? 2 : 1;
+        settings.CrtScanlineSpeed = (int)Math.Round(CrtSpeedSlider.Value);
+        settings.CrtScanlineWidth = (int)Math.Round(CrtScanlineWidthSlider.Value);
+        settings.CrtScanlineIntensity = CrtOpacitySlider.Value;
+        settings.CrtColorFilter = CrtColorComboBox.SelectedIndex switch
+        {
+            0 => "Amber",
+            1 => "Green",
+            _ => "None"
+        };
+        settings.PixelSize = (int)Math.Round(PixelSizeSlider.Value);
+        settings.PixelMonochrome = PixelMonochromeToggle.IsOn;
+        settings.PixelMonochromeColor = PixelMonochromeColors[Math.Clamp(PixelMonochromeColorComboBox.SelectedIndex, 0, PixelMonochromeColors.Length - 1)];
+        settings.CaptureFrameRate = (int)Math.Round(CaptureFrameRateSlider.Value);
+        settings.OutputFrameRate = (int)Math.Round(OutputFrameRateSlider.Value);
+        settings.IsClickThrough = ClickThroughToggle.IsOn;
+        settings.IsOverlayEnabled = IsOverlayVisible;
+        SettingsManager.Save();
     }
 
     private uint _shortcutModifiers = 0;
     private uint _shortcutKey = 0;
 
-    private void ShortcutTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    private void RecordShortcutButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!_isInitialized) return;
+        _isRecordingShortcut = true;
+        UpdateLanguage();
+        ShortcutTextBox.Focus(FocusState.Programmatic);
+        ShortcutTextBox.SelectAll();
+    }
+
+    private void ShortcutCapture_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (!_isInitialized || !_isRecordingShortcut) return;
         e.Handled = true;
 
         var key = e.Key;
         if (key == Windows.System.VirtualKey.Control || key == Windows.System.VirtualKey.Shift || key == Windows.System.VirtualKey.Menu)
         {
-            return; // Ignore modifier only
+            return;
         }
 
         uint modifiers = 0;
@@ -70,27 +226,50 @@ public sealed partial class MainPage : Page
         if ((shiftState & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down) modifiers |= 0x0004; // MOD_SHIFT
         if ((altState & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down) modifiers |= 0x0001; // MOD_ALT
 
+        if (modifiers == 0)
+        {
+            return;
+        }
+
         _shortcutModifiers = modifiers;
         _shortcutKey = (uint)key;
 
-        string shortcutText = "";
-        if ((modifiers & 0x0002) != 0) shortcutText += "Ctrl + ";
-        if ((modifiers & 0x0004) != 0) shortcutText += "Shift + ";
-        if ((modifiers & 0x0001) != 0) shortcutText += "Alt + ";
-        shortcutText += key.ToString();
+        UpdateShortcutText();
+        _isRecordingShortcut = false;
+        UpdateLanguage();
+        SaveSettings();
 
-        ShortcutTextBox.Text = shortcutText;
-
-        // Register hotkey in MainWindow
         var appWindow = (Application.Current as App)?.m_window as MainWindow;
         appWindow?.RegisterToggleHotKey(_shortcutModifiers, _shortcutKey);
     }
 
+    private void ShortcutCapture_KeyUp(object sender, KeyRoutedEventArgs e)
+    {
+        if (_isRecordingShortcut)
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void ShortcutTextBox_LosingFocus(object sender, RoutedEventArgs e)
+    {
+        if (_isRecordingShortcut)
+        {
+            _isRecordingShortcut = false;
+            UpdateLanguage();
+            UpdateShortcutText();
+        }
+    }
+
     private void ClearShortcutButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!_isInitialized) return;
+        _isRecordingShortcut = false;
         _shortcutModifiers = 0;
         _shortcutKey = 0;
-        ShortcutTextBox.Text = "";
+        UpdateShortcutText();
+        UpdateLanguage();
+        SaveSettings();
 
         var appWindow = (Application.Current as App)?.m_window as MainWindow;
         appWindow?.UnregisterToggleHotKey();
@@ -98,6 +277,7 @@ public sealed partial class MainPage : Page
 
     private void EffectTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         if (CrtSettingsPanel == null || PixelSettingsPanel == null) return;
 
         if (EffectTypeComboBox.SelectedIndex == 0) // CRT
@@ -115,35 +295,58 @@ public sealed partial class MainPage : Page
 
     private void CrtSettings_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         UpdateOverlaySettings();
     }
 
     private void CrtSettings_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
+        UpdateOverlaySettings();
+    }
+
+    private void PixelSettings_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_isInitialized) return;
         UpdateOverlaySettings();
     }
 
     private void PixelSettings_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         UpdateOverlaySettings();
     }
 
     private void PixelSettings_Toggled(object sender, RoutedEventArgs e)
     {
+        if (!_isInitialized) return;
         UpdateOverlaySettings();
     }
 
     private void SystemSettings_Toggled(object sender, RoutedEventArgs e)
     {
+        if (!_isInitialized) return;
         var appWindow = (Application.Current as App)?.m_window as MainWindow;
         if (appWindow != null)
         {
             appWindow.SetRunInBackground(RunInBackgroundToggle.IsOn);
         }
+        UpdateLanguage();
+        SaveSettings();
+        UpdateOverlaySettings();
+    }
+
+    private void SystemSettings_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (!_isInitialized) return;
+        UpdateLanguage();
+        SaveSettings();
+        UpdateOverlaySettings();
     }
 
     private void RunAtStartupToggle_Toggled(object sender, RoutedEventArgs e)
     {
+        if (!_isInitialized) return;
         try
         {
             var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
@@ -182,12 +385,37 @@ public sealed partial class MainPage : Page
         }
         UpdateOverlaySettings();
         _overlayWindow.Activate();
+        SaveSettings();
+    }
+
+    private void UpdateVisibleSection()
+    {
+        bool showOverlay = ((SettingsNavigationView.SelectedItem as NavigationViewItem)?.Tag as string) != "app";
+        OverlaySettingsScrollViewer.Visibility = showOverlay ? Visibility.Visible : Visibility.Collapsed;
+        AppSettingsScrollViewer.Visibility = showOverlay ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void UpdateShortcutText()
+    {
+        if (_shortcutKey == 0)
+        {
+            ShortcutTextBox.Text = string.Empty;
+            return;
+        }
+
+        string shortcutText = string.Empty;
+        if ((_shortcutModifiers & 0x0002) != 0) shortcutText += "Ctrl + ";
+        if ((_shortcutModifiers & 0x0004) != 0) shortcutText += "Shift + ";
+        if ((_shortcutModifiers & 0x0001) != 0) shortcutText += "Alt + ";
+        shortcutText += ((Windows.System.VirtualKey)_shortcutKey).ToString();
+        ShortcutTextBox.Text = shortcutText;
     }
 
     public void CloseOverlay()
     {
         _overlayWindow?.Close();
         _overlayWindow = null;
+        SaveSettings();
     }
 
     private void ShowOverlay_Click(object sender, RoutedEventArgs e)
@@ -202,6 +430,8 @@ public sealed partial class MainPage : Page
 
     private void UpdateOverlaySettings()
     {
+        SaveSettings();
+
         if (_overlayWindow == null) return;
 
         _overlayWindow.CurrentEffect = EffectTypeComboBox.SelectedIndex == 0 ?
@@ -211,9 +441,15 @@ public sealed partial class MainPage : Page
         _overlayWindow.CrtSpeed = (float)CrtSpeedSlider.Value;
         _overlayWindow.CrtOpacity = (float)CrtOpacitySlider.Value;
         _overlayWindow.CrtColorFilterIndex = CrtColorComboBox.SelectedIndex;
+        _overlayWindow.CrtScanlineWidth = (float)CrtScanlineWidthSlider.Value;
 
         // Pixelate
         _overlayWindow.PixelSize = (float)PixelSizeSlider.Value;
         _overlayWindow.PixelMonochrome = PixelMonochromeToggle.IsOn;
+        _overlayWindow.PixelMonochromeColorHex = PixelMonochromeColors[Math.Clamp(PixelMonochromeColorComboBox.SelectedIndex, 0, PixelMonochromeColors.Length - 1)];
+        _overlayWindow.CaptureFrameRate = (int)Math.Round(CaptureFrameRateSlider.Value);
+        _overlayWindow.OutputFrameRate = (int)Math.Round(OutputFrameRateSlider.Value);
+        _overlayWindow.IsClickThrough = ClickThroughToggle.IsOn;
+        _overlayWindow.RefreshWindowBehavior();
     }
 }

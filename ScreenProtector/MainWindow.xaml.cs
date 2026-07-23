@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml;
+using WinRT.Interop;
 
 namespace ScreenProtector;
 
@@ -36,6 +37,7 @@ public sealed partial class MainWindow : Window
 
     private const uint IMAGE_ICON = 1;
     private const uint LR_LOADFROMFILE = 0x00000010;
+    private const uint LR_DEFAULTSIZE = 0x00000040;
 
     private const int NIM_ADD = 0x00000000;
     private const int NIM_MODIFY = 0x00000001;
@@ -58,13 +60,31 @@ public sealed partial class MainWindow : Window
     [DllImport("user32.dll")]
     public static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern bool DestroyIcon(IntPtr hIcon);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern ushort RegisterWindowMessage(string lpString);
+
     public delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
     private const int GWLP_WNDPROC = -4;
+    private const int SW_HIDE = 0;
+    private const int SW_SHOW = 5;
 
     private NOTIFYICONDATA _trayIcon;
     private bool _runInBackground = true;
-    private WndProcDelegate _wndProcDelegate;
+    private WndProcDelegate? _wndProcDelegate;
     private IntPtr _oldWndProc;
+    private bool _trayInitialized;
 
     private const int HOTKEY_ID = 9000;
 
@@ -72,42 +92,45 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
 
-        ExtendsContentIntoTitleBar = true;
-        SetTitleBar(AppTitleBar);
-
         AppWindow.SetIcon("Assets/AppIcon.ico");
-
         RootFrame.Navigate(typeof(MainPage));
-
-        // Setup tray icon
         SetupTrayIcon();
-
-        // Intercept close
-        this.Closed += MainWindow_Closed;
+        AppWindow.Closing += AppWindow_Closing;
+        Closed += MainWindow_Closed;
     }
 
     private void SetupTrayIcon()
     {
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        if (_trayInitialized)
+        {
+            return;
+        }
 
+        IntPtr hwnd = WindowNative.GetWindowHandle(this);
         _wndProcDelegate = TrayWndProc;
         _oldWndProc = SetWindowLongPtr(hwnd, GWLP_WNDPROC, _wndProcDelegate);
 
-        string iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
-        IntPtr hIcon = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+        string iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+        IntPtr hIcon = LoadImage(IntPtr.Zero, iconPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
 
         _trayIcon = new NOTIFYICONDATA
         {
-            cbSize = Marshal.SizeOf(typeof(NOTIFYICONDATA)),
+            cbSize = Marshal.SizeOf<NOTIFYICONDATA>(),
             hWnd = hwnd,
             uID = 1,
-            uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE,
+            uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP,
             uCallbackMessage = WM_USER + 1,
             hIcon = hIcon,
             szTip = "ScreenProtector"
         };
 
-        Shell_NotifyIcon(NIM_ADD, ref _trayIcon);
+        if (!Shell_NotifyIcon(NIM_ADD, ref _trayIcon) && hIcon != IntPtr.Zero)
+        {
+            DestroyIcon(hIcon);
+            _trayIcon.hIcon = IntPtr.Zero;
+        }
+
+        _trayInitialized = true;
     }
 
     private IntPtr TrayWndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
@@ -137,8 +160,7 @@ public sealed partial class MainWindow : Window
                 // Dispatch back to UI thread
                 DispatcherQueue.TryEnqueue(() =>
                 {
-                    AppWindow.Show();
-                    // Bring to front logic if necessary could go here
+                    ShowMainWindow();
                 });
             }
             else if (lparamInt == WM_RBUTTONUP)
@@ -188,7 +210,11 @@ public sealed partial class MainWindow : Window
         InsertMenu(hMenu, 1, MF_BYPOSITION | MF_STRING, (UIntPtr)MENU_EXIT, "Exit");
 
         SetForegroundWindow(hWnd);
-        TrackPopupMenuEx(hMenu, TPM_RETURNCMD | TPM_NONOTIFY, pt.X, pt.Y, hWnd, IntPtr.Zero);
+        uint selectedCommand = TrackPopupMenuEx(hMenu, TPM_RETURNCMD | TPM_NONOTIFY, pt.X, pt.Y, hWnd, IntPtr.Zero);
+        if (selectedCommand != 0)
+        {
+            PostMessage(hWnd, WM_COMMAND, (IntPtr)selectedCommand, IntPtr.Zero);
+        }
         DestroyMenu(hMenu);
     }
 
@@ -234,35 +260,73 @@ public sealed partial class MainWindow : Window
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
+        if (_trayInitialized)
+        {
+            Shell_NotifyIcon(NIM_DELETE, ref _trayIcon);
+            if (_trayIcon.hIcon != IntPtr.Zero)
+            {
+                DestroyIcon(_trayIcon.hIcon);
+                _trayIcon.hIcon = IntPtr.Zero;
+            }
+
+            IntPtr hwnd = WindowNative.GetWindowHandle(this);
+            if (_oldWndProc != IntPtr.Zero)
+            {
+                SetWindowLongPtr(hwnd, GWLP_WNDPROC, _oldWndProc);
+                _oldWndProc = IntPtr.Zero;
+            }
+
+            _wndProcDelegate = null;
+            _trayInitialized = false;
+        }
+
+        Application.Current.Exit();
+    }
+
+    private void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowClosingEventArgs args)
+    {
         if (_runInBackground)
         {
-            args.Handled = true; // Cancel close
-            AppWindow.Hide();    // Hide window
-        }
-        else
-        {
-            UnregisterToggleHotKey();
-            Shell_NotifyIcon(NIM_DELETE, ref _trayIcon); // cleanup
-            SetWindowLongPtr(WinRT.Interop.WindowNative.GetWindowHandle(this), GWLP_WNDPROC, _oldWndProc);
-            Application.Current.Exit();
+            args.Cancel = true;
+            HideToTray();
         }
     }
 
     public void RegisterToggleHotKey(uint modifiers, uint key)
     {
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        IntPtr hwnd = WindowNative.GetWindowHandle(this);
         UnregisterHotKey(hwnd, HOTKEY_ID);
+
+        if (key == 0)
+        {
+            return;
+        }
+
         RegisterHotKey(hwnd, HOTKEY_ID, modifiers, key);
     }
 
     public void UnregisterToggleHotKey()
     {
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        IntPtr hwnd = WindowNative.GetWindowHandle(this);
         UnregisterHotKey(hwnd, HOTKEY_ID);
     }
 
     public void SetRunInBackground(bool runInBackground)
     {
         _runInBackground = runInBackground;
+    }
+
+    public void HideToTray()
+    {
+        IntPtr hwnd = WindowNative.GetWindowHandle(this);
+        ShowWindow(hwnd, SW_HIDE);
+    }
+
+    private void ShowMainWindow()
+    {
+        IntPtr hwnd = WindowNative.GetWindowHandle(this);
+        ShowWindow(hwnd, SW_SHOW);
+        SetForegroundWindow(hwnd);
+        AppWindow.Show();
     }
 }

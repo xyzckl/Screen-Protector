@@ -6,6 +6,11 @@ namespace ScreenProtector;
 
 public class AppSettings
 {
+    public string Language { get; set; } = "zh-CN";
+    public bool RunInBackground { get; set; } = true;
+    public bool RunAtStartup { get; set; } = false;
+    public uint ShortcutModifiers { get; set; } = 0;
+    public uint ShortcutKey { get; set; } = 0;
     public bool IsOverlayEnabled { get; set; } = false;
     public int EffectType { get; set; } = 1; // 0 = None, 1 = PixelArt, 2 = CRT
     public int CaptureFrameRate { get; set; } = 30; // 5 to 60 fps

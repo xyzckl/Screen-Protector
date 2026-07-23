@@ -1,150 +1,235 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Page
-    x:Class="ScreenProtector.MainPage"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:ScreenProtector"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+        x:Class="ScreenProtector.MainPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="using:ScreenProtector"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d">
 
-    <Grid Padding="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <NavigationView x:Name="SettingsNavigationView"
+                        IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="False"
+                        IsPaneOpen="False"
+                        CompactPaneLength="48"
+                        OpenPaneLength="170"
+                        PaneDisplayMode="LeftCompact"
+                        SelectionChanged="SettingsNavigationView_SelectionChanged">
+                <NavigationView.MenuItems>
+                        <NavigationViewItem x:Name="OverlayNavItem"
+                                            Content="遮罩设置"
+                                            Tag="overlay">
+                                <NavigationViewItem.Icon>
+                                        <SymbolIcon Symbol="Preview"/>
+                                </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItem x:Name="AppNavItem"
+                                            Content="软件设置"
+                                            Tag="app">
+                                <NavigationViewItem.Icon>
+                                        <SymbolIcon Symbol="Setting"/>
+                                </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                </NavigationView.MenuItems>
 
-        <TextBlock Text="ScreenProtector Settings"
-                Style="{StaticResource TitleTextBlockStyle}"
-                Margin="0,0,0,24"/>
+                <Grid Padding="24">
+                        <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="1">
-            <StackPanel Spacing="16"
-                    MaxWidth="600"
-                    HorizontalAlignment="Left">
+                        <TextBlock x:Name="PageTitleText"
+                                   Text="遮罩设置"
+                                   Style="{StaticResource TitleTextBlockStyle}"
+                                   Margin="0,0,0,24"/>
 
-                <!-- Effect Type -->
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Effect Type"
-                            Style="{StaticResource SubtitleTextBlockStyle}"/>
-                    <ComboBox x:Name="EffectTypeComboBox"
-                            SelectedIndex="0"
-                            Width="200"
-                            SelectionChanged="EffectTypeComboBox_SelectionChanged">
-                        <x:String>CRT Scanline</x:String>
-                        <x:String>Pixelate</x:String>
-                    </ComboBox>
-                </StackPanel>
+                        <Grid Grid.Row="1">
+                                <ScrollViewer x:Name="OverlaySettingsScrollViewer">
+                                        <StackPanel Spacing="16"
+                                                    MaxWidth="600"
+                                                    HorizontalAlignment="Left">
+                                                <StackPanel Spacing="8">
+                                                        <TextBlock x:Name="EffectTypeLabel"
+                                                                   Text="效果类型"
+                                                                   Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                                        <ComboBox x:Name="EffectTypeComboBox"
+                                                                  SelectedIndex="0"
+                                                                  Width="200"
+                                                                  SelectionChanged="EffectTypeComboBox_SelectionChanged">
+                                                                <x:String>CRT 扫描线</x:String>
+                                                                <x:String>像素化</x:String>
+                                                        </ComboBox>
+                                                </StackPanel>
 
-                <!-- CRT Settings -->
-                <StackPanel x:Name="CrtSettingsPanel"
-                        Spacing="8">
-                    <TextBlock Text="CRT Settings"
-                            Style="{StaticResource SubtitleTextBlockStyle}"
-                            Margin="0,16,0,0"/>
+                                                <StackPanel x:Name="CrtSettingsPanel"
+                                                            Spacing="8">
+                                                        <TextBlock x:Name="CrtSettingsTitle"
+                                                                   Text="CRT 设置"
+                                                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                                                   Margin="0,16,0,0"/>
 
-                    <TextBlock Text="Scanline Speed"/>
-                    <Slider x:Name="CrtSpeedSlider"
-                            Minimum="1"
-                            Maximum="100"
-                            Value="50"
-                            ValueChanged="CrtSettings_ValueChanged"/>
+                                                        <TextBlock x:Name="ScanlineSpeedLabel"
+                                                                   Text="扫描线速度"/>
+                                                        <Slider x:Name="CrtSpeedSlider"
+                                                                Minimum="1"
+                                                                Maximum="60"
+                                                                Value="18"
+                                                                ValueChanged="CrtSettings_ValueChanged"/>
 
-                    <TextBlock Text="Effect Opacity"/>
-                    <Slider x:Name="CrtOpacitySlider"
-                            Minimum="0"
-                            Maximum="1"
-                            StepFrequency="0.05"
-                            Value="0.3"
-                            ValueChanged="CrtSettings_ValueChanged"/>
+                                                        <TextBlock x:Name="ScanlineWidthLabel"
+                                                                   Text="扫描线宽度"/>
+                                                        <Slider x:Name="CrtScanlineWidthSlider"
+                                                                Minimum="1"
+                                                                Maximum="4"
+                                                                StepFrequency="1"
+                                                                Value="2"
+                                                                ValueChanged="CrtSettings_ValueChanged"/>
 
-                    <TextBlock Text="Color Filter"/>
-                    <ComboBox x:Name="CrtColorComboBox"
-                            SelectedIndex="0"
-                            Width="200"
-                            SelectionChanged="CrtSettings_SelectionChanged">
-                        <x:String>Classic Amber</x:String>
-                        <x:String>Matrix Green</x:String>
-                        <x:String>None</x:String>
-                    </ComboBox>
-                </StackPanel>
+                                                        <TextBlock x:Name="EffectOpacityLabel"
+                                                                   Text="效果不透明度"/>
+                                                        <Slider x:Name="CrtOpacitySlider"
+                                                                Minimum="0"
+                                                                Maximum="1"
+                                                                StepFrequency="0.05"
+                                                                Value="0.3"
+                                                                ValueChanged="CrtSettings_ValueChanged"/>
 
-                <!-- Pixelate Settings -->
-                <StackPanel x:Name="PixelSettingsPanel"
-                        Spacing="8"
-                        Visibility="Collapsed">
-                    <TextBlock Text="Pixelate Settings"
-                            Style="{StaticResource SubtitleTextBlockStyle}"
-                            Margin="0,16,0,0"/>
+                                                        <TextBlock x:Name="ColorFilterLabel"
+                                                                   Text="颜色滤镜"/>
+                                                        <ComboBox x:Name="CrtColorComboBox"
+                                                                  SelectedIndex="0"
+                                                                  Width="200"
+                                                                  SelectionChanged="CrtSettings_SelectionChanged">
+                                                                <x:String>经典琥珀</x:String>
+                                                                <x:String>矩阵绿色</x:String>
+                                                                <x:String>无</x:String>
+                                                        </ComboBox>
+                                                </StackPanel>
 
-                    <TextBlock Text="Pixel Size"/>
-                    <Slider x:Name="PixelSizeSlider"
-                            Minimum="2"
-                            Maximum="64"
-                            Value="16"
-                            ValueChanged="PixelSettings_ValueChanged"/>
+                                                <StackPanel x:Name="PixelSettingsPanel"
+                                                            Spacing="8"
+                                                            Visibility="Collapsed">
+                                                        <TextBlock x:Name="PixelSettingsTitle"
+                                                                   Text="像素化设置"
+                                                                   Style="{StaticResource SubtitleTextBlockStyle}"
+                                                                   Margin="0,16,0,0"/>
 
-                    <ToggleSwitch x:Name="PixelMonochromeToggle"
-                            Header="Monochrome"
-                            Toggled="PixelSettings_Toggled"/>
-                </StackPanel>
+                                                        <TextBlock x:Name="PixelSizeLabel"
+                                                                   Text="像素大小"/>
+                                                        <Slider x:Name="PixelSizeSlider"
+                                                                Minimum="2"
+                                                                Maximum="64"
+                                                                Value="16"
+                                                                ValueChanged="PixelSettings_ValueChanged"/>
 
-                <!-- System Settings -->
-                <StackPanel Spacing="8"
-                        Margin="0,24,0,0">
-                    <TextBlock x:Name="SystemSettingsTitle"
-                            Text="System Settings"
-                            Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                                        <ToggleSwitch x:Name="PixelMonochromeToggle"
+                                                                      Header="单色模式"
+                                                                      Toggled="PixelSettings_Toggled"/>
 
-                    <StackPanel Orientation="Horizontal"
-                            Spacing="8">
-                        <TextBlock x:Name="LanguageLabel"
-                                Text="Language / 语言"
-                                VerticalAlignment="Center"/>
-                        <ComboBox x:Name="LanguageComboBox"
-                                SelectedIndex="0"
-                                Width="150"
-                                SelectionChanged="LanguageComboBox_SelectionChanged">
-                            <x:String>English</x:String>
-                            <x:String>中文</x:String>
-                        </ComboBox>
-                    </StackPanel>
+                                                        <TextBlock x:Name="PixelMonochromeColorLabel"
+                                                                   Text="单色颜色"/>
+                                                        <ComboBox x:Name="PixelMonochromeColorComboBox"
+                                                                  SelectedIndex="0"
+                                                                  Width="200"
+                                                                  SelectionChanged="PixelSettings_SelectionChanged">
+                                                                <x:String>掌机绿色</x:String>
+                                                                <x:String>琥珀</x:String>
+                                                                <x:String>青色</x:String>
+                                                                <x:String>灰度</x:String>
+                                                        </ComboBox>
+                                                </StackPanel>
 
-                    <StackPanel Orientation="Horizontal"
-                            Spacing="8"
-                            Margin="0,8,0,0">
-                        <TextBlock x:Name="ShortcutLabel"
-                                Text="Toggle Shortcut:"
-                                VerticalAlignment="Center"/>
-                        <TextBox x:Name="ShortcutTextBox"
-                                Width="150"
-                                IsReadOnly="True"
-                                PlaceholderText="Press keys..."
-                                KeyDown="ShortcutTextBox_KeyDown"/>
-                        <Button x:Name="ClearShortcutButton"
-                                Content="Clear"
-                                Click="ClearShortcutButton_Click"/>
-                    </StackPanel>
+                                                <ToggleSwitch x:Name="ClickThroughToggle"
+                                                              Header="遮罩穿透点击"
+                                                              IsOn="True"
+                                                              Toggled="SystemSettings_Toggled"
+                                                              Margin="0,24,0,0"/>
 
-                    <ToggleSwitch x:Name="RunInBackgroundToggle"
-                            Header="Run in Background (System Tray)"
-                            IsOn="True"
-                            Toggled="SystemSettings_Toggled"/>
-                    <ToggleSwitch x:Name="RunAtStartupToggle"
-                            Header="Run at Startup"
-                            Toggled="RunAtStartupToggle_Toggled"/>
-                </StackPanel>
+                                                <TextBlock x:Name="CaptureFrameRateLabel"
+                                                           Text="捕捉帧率: 30 FPS"/>
+                                                <Slider x:Name="CaptureFrameRateSlider"
+                                                        Minimum="5"
+                                                        Maximum="60"
+                                                        StepFrequency="1"
+                                                        Value="30"
+                                                        ValueChanged="SystemSettings_ValueChanged"/>
 
-                <!-- Open Overlay -->
-                <Button x:Name="ShowOverlayBtn"
-                        Content="Show Overlay"
-                        Margin="0,16,0,0"
-                        Click="ShowOverlay_Click"
-                        Style="{StaticResource AccentButtonStyle}"/>
-                <Button x:Name="CloseOverlayBtn"
-                        Content="Close Overlay"
-                        Click="CloseOverlay_Click"/>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+                                                <TextBlock x:Name="OutputFrameRateLabel"
+                                                           Text="输出帧率: 60 FPS"/>
+                                                <Slider x:Name="OutputFrameRateSlider"
+                                                        Minimum="5"
+                                                        Maximum="60"
+                                                        StepFrequency="1"
+                                                        Value="60"
+                                                        ValueChanged="SystemSettings_ValueChanged"/>
+
+                                                <Button x:Name="ShowOverlayBtn"
+                                                        Content="显示遮罩"
+                                                        Margin="0,16,0,0"
+                                                        Click="ShowOverlay_Click"
+                                                        Style="{StaticResource AccentButtonStyle}"/>
+                                                <Button x:Name="CloseOverlayBtn"
+                                                        Content="关闭遮罩"
+                                                        Click="CloseOverlay_Click"/>
+                                        </StackPanel>
+                                </ScrollViewer>
+
+                                <ScrollViewer x:Name="AppSettingsScrollViewer"
+                                              Visibility="Collapsed">
+                                        <StackPanel Spacing="16"
+                                                    MaxWidth="600"
+                                                    HorizontalAlignment="Left">
+                                                <TextBlock x:Name="SystemSettingsTitle"
+                                                           Text="软件设置"
+                                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                                                <StackPanel Orientation="Horizontal"
+                                                            Spacing="8">
+                                                        <TextBlock x:Name="LanguageLabel"
+                                                                   Text="语言"
+                                                                   VerticalAlignment="Center"/>
+                                                        <ComboBox x:Name="LanguageComboBox"
+                                                                  SelectedIndex="1"
+                                                                  Width="150"
+                                                                  SelectionChanged="LanguageComboBox_SelectionChanged">
+                                                                <x:String>English</x:String>
+                                                                <x:String>中文</x:String>
+                                                        </ComboBox>
+                                                </StackPanel>
+
+                                                <StackPanel Spacing="8">
+                                                        <TextBlock x:Name="ShortcutLabel"
+                                                                   Text="切换快捷键"
+                                                                   VerticalAlignment="Center"/>
+                                                        <StackPanel Orientation="Horizontal"
+                                                                    Spacing="8">
+                                                                <TextBox x:Name="ShortcutTextBox"
+                                                                         Width="220"
+                                                                         IsReadOnly="True"
+                                                                         PlaceholderText="点击开始录制后按组合键..."
+                                                                         KeyDown="ShortcutCapture_KeyDown"
+                                                                         KeyUp="ShortcutCapture_KeyUp"
+                                                                         LosingFocus="ShortcutTextBox_LosingFocus"/>
+                                                                <Button x:Name="RecordShortcutButton"
+                                                                        Content="开始录制"
+                                                                        Click="RecordShortcutButton_Click"/>
+                                                                <Button x:Name="ClearShortcutButton"
+                                                                        Content="清除"
+                                                                        Click="ClearShortcutButton_Click"/>
+                                                        </StackPanel>
+                                                </StackPanel>
+
+                                                <ToggleSwitch x:Name="RunInBackgroundToggle"
+                                                              Header="后台运行 (系统托盘)"
+                                                              IsOn="True"
+                                                              Toggled="SystemSettings_Toggled"/>
+                                                <ToggleSwitch x:Name="RunAtStartupToggle"
+                                                              Header="开机自启"
+                                                              Toggled="RunAtStartupToggle_Toggled"/>
+                                        </StackPanel>
+                                </ScrollViewer>
+                        </Grid>
+                </Grid>
+        </NavigationView>
 </Page>
