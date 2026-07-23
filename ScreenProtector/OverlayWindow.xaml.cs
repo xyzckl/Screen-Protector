@@ -29,23 +29,23 @@ public sealed partial class OverlayWindow : Window
     public OverlayWindow()
     {
         InitializeComponent();
-        
+
         ExtendsContentIntoTitleBar = true;
-        
+
         this.Activated += OverlayWindow_Activated;
     }
 
     private void OverlayWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
         var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-        
+
         // Set extended window styles for click-through and toolwindow. DO NOT USE WS_EX_LAYERED with WinUI 3.
         int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
         SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
 
         // Make topmost
         SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-        
+
         // Fullscreen
         AppWindow.SetPresenter(Microsoft.UI.Windowing.AppWindowPresenterKind.FullScreen);
     }
@@ -63,6 +63,10 @@ public sealed partial class OverlayWindow : Window
     public bool PixelMonochrome { get; set; } = false;
 
     private float _scanlineY = 0;
+    private byte[]? _pixelBuffer;
+    private Microsoft.Graphics.Canvas.CanvasBitmap? _screenBitmap;
+    private int _captureWidth;
+    private int _captureHeight;
 
     private void CanvasControl_Update(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
     {
@@ -75,6 +79,35 @@ public sealed partial class OverlayWindow : Window
                 _scanlineY = 0;
             }
         }
+
+        // Capture screen
+        int screenWidth = ScreenCapture.ScreenWidth;
+        int screenHeight = ScreenCapture.ScreenHeight;
+
+        if (screenWidth > 0 && screenHeight > 0)
+        {
+            int destWidth = screenWidth;
+            int destHeight = screenHeight;
+
+            if (CurrentEffect == EffectType.Pixelate)
+            {
+                destWidth = (int)(screenWidth / PixelSize);
+                destHeight = (int)(screenHeight / PixelSize);
+                if (destWidth <= 0) destWidth = 1;
+                if (destHeight <= 0) destHeight = 1;
+            }
+
+            if (_pixelBuffer == null || _captureWidth != destWidth || _captureHeight != destHeight)
+            {
+                _pixelBuffer = new byte[destWidth * destHeight * 4];
+                _captureWidth = destWidth;
+                _captureHeight = destHeight;
+
+                // Capture screen only once when the overlay is created or resized
+                // to avoid capturing the overlay itself in a feedback loop
+                ScreenCapture.CaptureScreen(destWidth, destHeight, _pixelBuffer);
+            }
+        }
     }
 
     private void CanvasControl_Draw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
@@ -82,6 +115,37 @@ public sealed partial class OverlayWindow : Window
         var ds = args.DrawingSession;
         var width = (float)sender.Size.Width;
         var height = (float)sender.Size.Height;
+
+        if (_pixelBuffer != null && _captureWidth > 0 && _captureHeight > 0)
+        {
+            if (_screenBitmap != null && (_screenBitmap.SizeInPixels.Width != _captureWidth || _screenBitmap.SizeInPixels.Height != _captureHeight))
+            {
+                _screenBitmap.Dispose();
+                _screenBitmap = null;
+            }
+
+            if (_screenBitmap == null)
+            {
+                _screenBitmap = Microsoft.Graphics.Canvas.CanvasBitmap.CreateFromBytes(
+                    sender.Device, _pixelBuffer, _captureWidth, _captureHeight,
+                    Windows.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized);
+            }
+            else
+            {
+                _screenBitmap.SetPixelBytes(_pixelBuffer);
+            }
+
+            if (CurrentEffect == EffectType.Pixelate)
+            {
+                ds.DrawImage(_screenBitmap, new Windows.Foundation.Rect(0, 0, width, height),
+                    new Windows.Foundation.Rect(0, 0, _captureWidth, _captureHeight),
+                    1.0f, Microsoft.Graphics.Canvas.CanvasImageInterpolation.NearestNeighbor);
+            }
+            else
+            {
+                ds.DrawImage(_screenBitmap, new Windows.Foundation.Rect(0, 0, width, height));
+            }
+        }
 
         if (CurrentEffect == EffectType.CRT)
         {
@@ -102,22 +166,6 @@ public sealed partial class OverlayWindow : Window
             for (float y = _scanlineY % spacing; y < height; y += spacing)
             {
                 ds.DrawLine(0, y, width, y, scanlineColor, 1f);
-            }
-        }
-        else if (CurrentEffect == EffectType.Pixelate)
-        {
-            // Draw a pixel grid overlay
-            var gridColor = PixelMonochrome ? 
-                Color.FromArgb((byte)(CrtOpacity * 255), 0, 0, 0) : 
-                Color.FromArgb((byte)(CrtOpacity * 100), 100, 100, 100);
-
-            for (float x = 0; x < width; x += PixelSize)
-            {
-                ds.DrawLine(x, 0, x, height, gridColor, 1f);
-            }
-            for (float y = 0; y < height; y += PixelSize)
-            {
-                ds.DrawLine(0, y, width, y, gridColor, 1f);
             }
         }
     }

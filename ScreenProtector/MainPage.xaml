@@ -13,33 +13,56 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
-        <TextBlock Text="ScreenProtector Settings" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,24" />
-        
+
+        <TextBlock Text="ScreenProtector Settings"
+                Style="{StaticResource TitleTextBlockStyle}"
+                Margin="0,0,0,24"/>
+
         <ScrollViewer Grid.Row="1">
-            <StackPanel Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
-                
+            <StackPanel Spacing="16"
+                    MaxWidth="600"
+                    HorizontalAlignment="Left">
+
                 <!-- Effect Type -->
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Effect Type" Style="{StaticResource SubtitleTextBlockStyle}" />
-                    <ComboBox x:Name="EffectTypeComboBox" SelectedIndex="0" Width="200" SelectionChanged="EffectTypeComboBox_SelectionChanged">
+                    <TextBlock Text="Effect Type"
+                            Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <ComboBox x:Name="EffectTypeComboBox"
+                            SelectedIndex="0"
+                            Width="200"
+                            SelectionChanged="EffectTypeComboBox_SelectionChanged">
                         <x:String>CRT Scanline</x:String>
                         <x:String>Pixelate</x:String>
                     </ComboBox>
                 </StackPanel>
 
                 <!-- CRT Settings -->
-                <StackPanel x:Name="CrtSettingsPanel" Spacing="8">
-                    <TextBlock Text="CRT Settings" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,0" />
-                    
-                    <TextBlock Text="Scanline Speed" />
-                    <Slider x:Name="CrtSpeedSlider" Minimum="1" Maximum="100" Value="50" ValueChanged="CrtSettings_ValueChanged" />
-                    
-                    <TextBlock Text="Effect Opacity" />
-                    <Slider x:Name="CrtOpacitySlider" Minimum="0" Maximum="1" StepFrequency="0.05" Value="0.3" ValueChanged="CrtSettings_ValueChanged" />
-                    
-                    <TextBlock Text="Color Filter" />
-                    <ComboBox x:Name="CrtColorComboBox" SelectedIndex="0" Width="200" SelectionChanged="CrtSettings_SelectionChanged">
+                <StackPanel x:Name="CrtSettingsPanel"
+                        Spacing="8">
+                    <TextBlock Text="CRT Settings"
+                            Style="{StaticResource SubtitleTextBlockStyle}"
+                            Margin="0,16,0,0"/>
+
+                    <TextBlock Text="Scanline Speed"/>
+                    <Slider x:Name="CrtSpeedSlider"
+                            Minimum="1"
+                            Maximum="100"
+                            Value="50"
+                            ValueChanged="CrtSettings_ValueChanged"/>
+
+                    <TextBlock Text="Effect Opacity"/>
+                    <Slider x:Name="CrtOpacitySlider"
+                            Minimum="0"
+                            Maximum="1"
+                            StepFrequency="0.05"
+                            Value="0.3"
+                            ValueChanged="CrtSettings_ValueChanged"/>
+
+                    <TextBlock Text="Color Filter"/>
+                    <ComboBox x:Name="CrtColorComboBox"
+                            SelectedIndex="0"
+                            Width="200"
+                            SelectionChanged="CrtSettings_SelectionChanged">
                         <x:String>Classic Amber</x:String>
                         <x:String>Matrix Green</x:String>
                         <x:String>None</x:String>
@@ -47,25 +70,80 @@
                 </StackPanel>
 
                 <!-- Pixelate Settings -->
-                <StackPanel x:Name="PixelSettingsPanel" Spacing="8" Visibility="Collapsed">
-                    <TextBlock Text="Pixelate Settings" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,0" />
-                    
-                    <TextBlock Text="Pixel Size" />
-                    <Slider x:Name="PixelSizeSlider" Minimum="2" Maximum="64" Value="16" ValueChanged="PixelSettings_ValueChanged" />
-                    
-                    <ToggleSwitch x:Name="PixelMonochromeToggle" Header="Monochrome" Toggled="PixelSettings_Toggled" />
+                <StackPanel x:Name="PixelSettingsPanel"
+                        Spacing="8"
+                        Visibility="Collapsed">
+                    <TextBlock Text="Pixelate Settings"
+                            Style="{StaticResource SubtitleTextBlockStyle}"
+                            Margin="0,16,0,0"/>
+
+                    <TextBlock Text="Pixel Size"/>
+                    <Slider x:Name="PixelSizeSlider"
+                            Minimum="2"
+                            Maximum="64"
+                            Value="16"
+                            ValueChanged="PixelSettings_ValueChanged"/>
+
+                    <ToggleSwitch x:Name="PixelMonochromeToggle"
+                            Header="Monochrome"
+                            Toggled="PixelSettings_Toggled"/>
                 </StackPanel>
-                
+
                 <!-- System Settings -->
-                <StackPanel Spacing="8" Margin="0,24,0,0">
-                    <TextBlock Text="System Settings" Style="{StaticResource SubtitleTextBlockStyle}" />
-                    <ToggleSwitch x:Name="RunInBackgroundToggle" Header="Run in Background (System Tray)" IsOn="True" Toggled="SystemSettings_Toggled" />
-                    <ToggleSwitch x:Name="RunAtStartupToggle" Header="Run at Startup" Toggled="RunAtStartupToggle_Toggled" />
+                <StackPanel Spacing="8"
+                        Margin="0,24,0,0">
+                    <TextBlock x:Name="SystemSettingsTitle"
+                            Text="System Settings"
+                            Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                    <StackPanel Orientation="Horizontal"
+                            Spacing="8">
+                        <TextBlock x:Name="LanguageLabel"
+                                Text="Language / 语言"
+                                VerticalAlignment="Center"/>
+                        <ComboBox x:Name="LanguageComboBox"
+                                SelectedIndex="0"
+                                Width="150"
+                                SelectionChanged="LanguageComboBox_SelectionChanged">
+                            <x:String>English</x:String>
+                            <x:String>中文</x:String>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal"
+                            Spacing="8"
+                            Margin="0,8,0,0">
+                        <TextBlock x:Name="ShortcutLabel"
+                                Text="Toggle Shortcut:"
+                                VerticalAlignment="Center"/>
+                        <TextBox x:Name="ShortcutTextBox"
+                                Width="150"
+                                IsReadOnly="True"
+                                PlaceholderText="Press keys..."
+                                KeyDown="ShortcutTextBox_KeyDown"/>
+                        <Button x:Name="ClearShortcutButton"
+                                Content="Clear"
+                                Click="ClearShortcutButton_Click"/>
+                    </StackPanel>
+
+                    <ToggleSwitch x:Name="RunInBackgroundToggle"
+                            Header="Run in Background (System Tray)"
+                            IsOn="True"
+                            Toggled="SystemSettings_Toggled"/>
+                    <ToggleSwitch x:Name="RunAtStartupToggle"
+                            Header="Run at Startup"
+                            Toggled="RunAtStartupToggle_Toggled"/>
                 </StackPanel>
-                
+
                 <!-- Open Overlay -->
-                <Button Content="Show Overlay" Margin="0,16,0,0" Click="ShowOverlay_Click" Style="{StaticResource AccentButtonStyle}" />
-                <Button Content="Close Overlay" Click="CloseOverlay_Click" />
+                <Button x:Name="ShowOverlayBtn"
+                        Content="Show Overlay"
+                        Margin="0,16,0,0"
+                        Click="ShowOverlay_Click"
+                        Style="{StaticResource AccentButtonStyle}"/>
+                <Button x:Name="CloseOverlayBtn"
+                        Content="Close Overlay"
+                        Click="CloseOverlay_Click"/>
             </StackPanel>
         </ScrollViewer>
     </Grid>
