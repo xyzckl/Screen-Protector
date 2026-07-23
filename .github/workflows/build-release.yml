@@ -54,6 +54,11 @@ jobs:
         & $signtool sign /f ScreenProtector.pfx /p $env:CERT_PASSWORD /fd SHA256 ./publish_output/ScreenProtector.exe
       shell: pwsh
 
+    - name: Remove Debug Symbols From Release Package
+      run: |
+        Get-ChildItem -Path ./publish_output -Filter *.pdb -File | Remove-Item -Force
+      shell: pwsh
+
     - name: Package Publish Output
       run: |
         Compress-Archive -Path ./publish_output/* -DestinationPath ./ScreenProtector-win-x64.zip -Force
